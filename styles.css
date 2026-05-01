@@ -1381,9 +1381,9 @@ body.maplibre-active .leaflet-map {
 
 .maplibre-map .maplibregl-canvas {
   filter:
-    brightness(0.58)
-    saturate(0.38)
-    contrast(0.94)
+    brightness(0.86)
+    saturate(0.62)
+    contrast(0.98)
     hue-rotate(-9deg);
 }
 

@@ -2781,7 +2781,7 @@ function initMapLibreDeckMap() {
         id: "wm-ocean",
         type: "background",
         paint: {
-          "background-color": "#020b14",
+          "background-color": "#061925",
         },
       },
       {
@@ -2789,11 +2789,11 @@ function initMapLibreDeckMap() {
         type: "raster",
         source: "relief",
         paint: {
-          "raster-opacity": 0.62,
-          "raster-contrast": -0.08,
-          "raster-saturation": -0.68,
+          "raster-opacity": 0.84,
+          "raster-contrast": -0.03,
+          "raster-saturation": -0.42,
           "raster-brightness-min": 0.0,
-          "raster-brightness-max": 0.39,
+          "raster-brightness-max": 0.78,
         },
       },
       {
@@ -2801,10 +2801,10 @@ function initMapLibreDeckMap() {
         type: "hillshade",
         source: "terrain",
         paint: {
-          "hillshade-shadow-color": "rgba(0, 0, 0, 0.76)",
-          "hillshade-highlight-color": "rgba(198, 196, 162, 0.045)",
-          "hillshade-accent-color": "rgba(32, 45, 42, 0.14)",
-          "hillshade-exaggeration": 0.3,
+          "hillshade-shadow-color": "rgba(0, 0, 0, 0.34)",
+          "hillshade-highlight-color": "rgba(218, 214, 180, 0.13)",
+          "hillshade-accent-color": "rgba(45, 61, 55, 0.10)",
+          "hillshade-exaggeration": 0.16,
         },
       },
     ],
@@ -2841,9 +2841,6 @@ function initMapLibreDeckMap() {
   }
   mapLibreMapContainer.addEventListener("wheel", handleDeckDiscreteWheel, { passive: false });
   appState.mapLibreMap.on("load", () => {
-    if (appState.mapLibreMap.setTerrain) {
-      appState.mapLibreMap.setTerrain({ source: "terrain", exaggeration: 0.22 });
-    }
     updateDeckStrategyLayers();
   });
   appState.mapLibreMap.on("move", scheduleDeckViewSync);
