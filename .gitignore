@@ -1,0 +1,16 @@
+node_modules/
+npm-debug.log*
+
+.env
+.env.*
+!.env.example
+
+third_party/
+*.zip
+tools/*.exe
+tools/*.msi
+
+.DS_Store
+Thumbs.db
+
+*.log

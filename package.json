@@ -1,0 +1,10 @@
+{
+  "name": "world-mandate-prototype",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Browser-based multiplayer strategy game prototype with resources, diplomacy, AI news, and RP decisions",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

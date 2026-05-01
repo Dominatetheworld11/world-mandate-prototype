@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>World Mandate Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@500;600&family=Oswald:wght@600;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQiq8yGmM4d3g6lTkP1Uq21j7w1C04g="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Living Multiplayer Strategy Prototype</p>
+        <h1>World Mandate</h1>
+      </div>
+      <div class="status-bar">
+        <div class="status-pill">
+          <span>Connection</span>
+          <strong id="connection-status">Connecting</strong>
+        </div>
+        <div class="status-pill">
+          <span>Tick</span>
+          <strong id="tick-value">00</strong>
+        </div>
+        <div class="status-pill">
+          <span>Server</span>
+          <strong id="server-name">World Mandate Live Theatre</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section id="screen-auth" class="screen active">
+        <div class="join-shell">
+          <section class="card intro-card">
+            <h2>Prototype Scope</h2>
+            <ul class="intro-list">
+              <li>Country bonuses for steel, oil, electronics, money, combat, and build speed</li>
+              <li>Cities produce resources and unlock infantry, tanks, jets, navy, and defenses</li>
+              <li>AI countries build, trade, declare wars, move troops, and create headlines</li>
+              <li>RP decisions affect stability, armies, and the economy</li>
+              <li>Win through military domination, economic supremacy, or alliance leadership</li>
+            </ul>
+          </section>
+
+          <form id="login-form" class="card join-card">
+            <div class="panel-head">
+              <h2>Account Access</h2>
+              <span id="account-mode-label">Create Account</span>
+            </div>
+            <label>
+              <span>Username</span>
+              <input id="account-username" type="text" maxlength="24" autocomplete="username" value="commander" />
+            </label>
+            <label id="email-field">
+              <span>Email</span>
+              <input id="account-email" type="email" maxlength="48" autocomplete="email" value="commander@world.local" />
+            </label>
+            <label>
+              <span>Password</span>
+              <input id="account-password" type="password" maxlength="32" autocomplete="current-password" value="mandate" />
+            </label>
+            <label id="commander-field">
+              <span>Commander Name</span>
+              <input id="player-name" type="text" maxlength="24" value="Alex Mercer" />
+            </label>
+            <div class="auth-actions">
+              <button type="submit" class="primary-button" data-auth-action="create">Create Account</button>
+              <button type="button" id="login-account" class="ghost-button">Login</button>
+            </div>
+            <button type="button" id="preview-world" class="ghost-button">Preview Live World</button>
+            <p id="account-message" class="module-copy">Accounts save in this browser for the prototype.</p>
+          </form>
+        </div>
+      </section>
+
+      <section id="screen-lobby" class="screen">
+        <div class="lobby-grid">
+          <section class="card server-card">
+            <p class="eyebrow">Server Browser</p>
+            <h2>Choose Campaign Server</h2>
+            <p>
+              Join one campaign server first. After that you choose one open country inside
+              that server. If another player already controls a country there, it is locked.
+            </p>
+            <ul class="intro-list compact">
+              <li>No food system: military and infrastructure use steel, oil, electronics, and money</li>
+              <li>Diplomacy supports alliance, trade, peace, and war</li>
+              <li>Daily activity comes from crises, shortages, border tension, and news</li>
+            </ul>
+            <button id="back-to-auth" class="ghost-button">Back</button>
+            <button id="preview-from-lobby" class="ghost-button">Preview World</button>
+          </section>
+
+          <section class="card country-select-card">
+            <div class="panel-head">
+              <h2>Available Countries</h2>
+              <p id="lobby-caption">Waiting for world state...</p>
+            </div>
+            <div id="country-list" class="country-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="screen-game" class="screen">
+        <div class="game-grid">
+          <div class="strategic-topbar">
+            <section class="player-card">
+              <div class="panel-head">
+                <h2 id="player-country-name">Country</h2>
+                <span id="win-status" class="country-tag">No victory yet</span>
+              </div>
+              <div class="session-line">
+                <span id="game-player">Alex Mercer</span>
+                <span id="game-day">Tick 00</span>
+              </div>
+              <p id="player-trait">--</p>
+              <p id="player-caption">Waiting for country claim...</p>
+              <div class="meter-row">
+                <span>Stability</span>
+                <strong id="stability-value">0%</strong>
+              </div>
+              <div class="meter"><i id="stability-fill" class="meter-fill"></i></div>
+            </section>
+
+            <section class="resource-card">
+              <div class="panel-head">
+                <h2>Resources</h2>
+                <span>Stockpile</span>
+              </div>
+              <div id="resource-grid" class="mini-grid"></div>
+              <article class="resource-tile manpower-tile">
+                <span>Manpower</span>
+                <strong id="manpower-value">--</strong>
+                <small>available command pool</small>
+              </article>
+              <div class="panel-head compact-head">
+                <h2>Net Income</h2>
+                <span>Production minus upkeep</span>
+              </div>
+              <div id="production-grid" class="mini-grid"></div>
+            </section>
+
+            <section id="decision-panel" class="decision-card" hidden>
+              <div class="panel-head">
+                <h2>Leader Decision</h2>
+                <span>RP Event</span>
+              </div>
+              <div id="decision-body" class="detail-stack"></div>
+              <div id="decision-actions" class="button-stack"></div>
+            </section>
+          </div>
+
+          <div class="module-dock" aria-label="Command modules">
+            <button class="module-button" type="button"><span>DIP</span><strong>Diplomacy</strong></button>
+            <button class="module-button" type="button"><span>ECO</span><strong>Economy</strong></button>
+            <button class="module-button" type="button"><span>MIL</span><strong>Military</strong></button>
+            <button class="module-button" type="button"><span>R&D</span><strong>Research</strong></button>
+            <button class="module-button" type="button"><span>INT</span><strong>Intel</strong></button>
+          </div>
+
+          <section class="card action-card" id="province-command-card">
+              <div class="panel-head">
+                <h2>Province</h2>
+                <div class="panel-controls">
+                  <span id="selected-region-type" class="type-pill" hidden>--</span>
+                  <button id="close-province-panel" class="panel-close" type="button" aria-label="Close province panel">X</button>
+                </div>
+              </div>
+              <div id="selected-region" class="detail-stack"></div>
+              <div id="build-actions" class="button-stack"></div>
+              <div id="recruit-actions" class="button-stack"></div>
+              <div id="movement-actions" class="button-stack"></div>
+          </section>
+
+          <section class="map-card">
+            <div class="map-head">
+              <div class="legend">
+                <span><i class="dot self"></i>You</span>
+                <span><i class="dot allied"></i>Alliance</span>
+                <span><i class="dot trade"></i>Trade</span>
+                <span><i class="dot neutral"></i>Neutral</span>
+                <span><i class="dot war"></i>War</span>
+              </div>
+              <p class="map-hint">Click a region to inspect cities, structures, units, and routes.</p>
+            </div>
+            <div class="map-shell">
+              <div id="maplibre-map" class="maplibre-map" aria-label="MapLibre grand strategy map"></div>
+              <div id="deck-overlay" class="deck-overlay" aria-hidden="true"></div>
+              <div id="leaflet-map" class="leaflet-map" aria-label="Real world strategy map"></div>
+              <div class="map-perspective-stage">
+                <canvas id="terrain-canvas" class="terrain-canvas" width="1000" height="620" aria-hidden="true"></canvas>
+                <svg
+                  id="game-map"
+                  class="game-map"
+                  viewBox="0 0 1000 620"
+                  preserveAspectRatio="xMidYMid meet"
+                  role="img"
+                  aria-label="Strategy map"
+                ></svg>
+              </div>
+            </div>
+          </section>
+
+          <div class="module-drawers" aria-hidden="true">
+            <section class="diplomacy-card">
+              <div class="panel-head">
+                <h2>Diplomacy</h2>
+                <span id="player-view-label">--</span>
+              </div>
+              <div id="diplomacy-list" class="diplomacy-list"></div>
+            </section>
+
+            <section class="military-card">
+              <div class="panel-head">
+                <h2>Military</h2>
+                <span>Forces</span>
+              </div>
+              <div id="military-overview" class="mini-grid"></div>
+            </section>
+
+            <section class="news-card">
+              <div class="panel-head">
+                <h2>World News</h2>
+                <span id="news-count">0</span>
+              </div>
+              <div id="news-feed" class="news-feed"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" hidden></div>
+    <span id="top-player" hidden>Alex Mercer</span>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/deck.gl@8.9.35/dist.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="movement-core.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

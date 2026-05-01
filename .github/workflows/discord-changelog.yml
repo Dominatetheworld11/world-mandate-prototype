@@ -1,0 +1,45 @@
+name: Post Discord Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Discord message title"
+        required: false
+        default: "World Mandate changelog"
+
+jobs:
+  post-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Discord payload
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          title = "${{ github.event.inputs.title }}"
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8").strip()
+          content = changelog[:1800]
+          payload = {
+              "username": "World Mandate Updates",
+              "content": f"**{title}**\n\n{content}"
+          }
+          Path("discord-payload.json").write_text(json.dumps(payload), encoding="utf-8")
+          PY
+
+      - name: Post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "Missing DISCORD_WEBHOOK_URL repository secret."
+            exit 1
+          fi
+          curl -sS -H "Content-Type: application/json" \
+            -d @discord-payload.json \
+            "$DISCORD_WEBHOOK_URL"
+
