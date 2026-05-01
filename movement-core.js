@@ -42,6 +42,91 @@
     return path;
   }
 
+  function pathDistance(path) {
+    if (!Array.isArray(path) || path.length < 2) return 0;
+    let total = 0;
+    for (let index = 1; index < path.length; index += 1) {
+      total += distanceLngLat(path[index - 1], path[index]);
+    }
+    return total;
+  }
+
+  function provinceNeighborIds(province) {
+    if (!province) return [];
+    const ids = []
+      .concat(Array.isArray(province.neighbors) ? province.neighbors : [])
+      .concat(Array.isArray(province.roadLinks) ? province.roadLinks : []);
+    return ids.filter(Boolean);
+  }
+
+  function provinceGraph(provinces) {
+    const byId = new Map();
+    const adjacency = new Map();
+    for (const province of provinces || []) {
+      if (!province || !province.id || !Array.isArray(province.center)) continue;
+      byId.set(province.id, province);
+      if (!adjacency.has(province.id)) adjacency.set(province.id, new Set());
+    }
+    for (const province of byId.values()) {
+      for (const neighborId of provinceNeighborIds(province)) {
+        if (!byId.has(neighborId)) continue;
+        adjacency.get(province.id).add(neighborId);
+        if (!adjacency.has(neighborId)) adjacency.set(neighborId, new Set());
+        adjacency.get(neighborId).add(province.id);
+      }
+    }
+    return { byId, adjacency };
+  }
+
+  function shortestProvincePath(provinces, startId, endId) {
+    if (!startId || !endId || !Array.isArray(provinces)) return [];
+    const graph = provinceGraph(provinces);
+    if (!graph.byId.has(startId) || !graph.byId.has(endId)) return [];
+    if (startId === endId) return [graph.byId.get(startId)];
+
+    const queue = [startId];
+    const visited = new Set([startId]);
+    const previous = new Map();
+
+    while (queue.length) {
+      const current = queue.shift();
+      const neighbors = graph.adjacency.get(current) || new Set();
+      for (const neighborId of neighbors) {
+        if (visited.has(neighborId)) continue;
+        visited.add(neighborId);
+        previous.set(neighborId, current);
+        if (neighborId === endId) {
+          const ids = [endId];
+          let cursor = endId;
+          while (previous.has(cursor)) {
+            cursor = previous.get(cursor);
+            ids.unshift(cursor);
+          }
+          return ids.map((id) => graph.byId.get(id)).filter(Boolean);
+        }
+        queue.push(neighborId);
+      }
+    }
+
+    return [];
+  }
+
+  function segmentedProvinceRoute(provincePath, samplesPerSegment) {
+    if (!Array.isArray(provincePath) || provincePath.length < 2) return [];
+    const path = [];
+    for (let index = 1; index < provincePath.length; index += 1) {
+      const start = provincePath[index - 1].center;
+      const end = provincePath[index].center;
+      if (!Array.isArray(start) || !Array.isArray(end)) continue;
+      const segment = curvedRoute(start, end, samplesPerSegment || 8);
+      for (let pointIndex = 0; pointIndex < segment.length; pointIndex += 1) {
+        if (index > 1 && pointIndex === 0) continue;
+        path.push(segment[pointIndex]);
+      }
+    }
+    return path;
+  }
+
   function positionAlongPath(path, progress) {
     if (!Array.isArray(path) || path.length === 0) return null;
     if (path.length === 1) return path[0].slice();
@@ -112,7 +197,17 @@
     const end = targetProvince && Array.isArray(targetProvince.center) ? targetProvince.center.slice() : null;
     if (!unit || !unit.id || !start || !end) return null;
     const speed = Math.max(Number(unit.speed || unit.movementSpeed || 0.2), 0.05);
-    const distance = distanceLngLat(start, end);
+    const fromProvinceId = unit.provinceId || unit.localProvinceId || unit.regionId || null;
+    const provincePath = options && Array.isArray(options.provinces)
+      ? shortestProvincePath(options.provinces, fromProvinceId, targetProvince.id)
+      : [];
+    const routedPath = provincePath.length >= 2
+      ? segmentedProvinceRoute(provincePath, options && options.samplesPerSegment)
+      : [];
+    const path = routedPath.length >= 2
+      ? routedPath
+      : curvedRoute(start, end, options && options.samples);
+    const distance = pathDistance(path) || distanceLngLat(start, end);
     const durationMs = options && options.durationMs
       ? options.durationMs
       : Math.max(2200, Math.min(10500, (distance * 520) / speed));
@@ -120,11 +215,12 @@
     return {
       id: `${unit.id}-${targetProvince.id}-${Math.round(now || Date.now())}`,
       unitId: unit.id,
-      fromProvinceId: unit.provinceId || unit.regionId || null,
+      fromProvinceId,
       toProvinceId: targetProvince.id,
       startedAt: now || Date.now(),
       durationMs,
-      path: curvedRoute(start, end, options && options.samples),
+      path,
+      provincePath: provincePath.map((province) => province.id),
       progress: 0,
     };
   }
@@ -147,6 +243,7 @@
     curvedRoute,
     distanceLngLat,
     nearestProvinceForUnit,
+    shortestProvincePath,
     positionAlongPath,
   };
 }));

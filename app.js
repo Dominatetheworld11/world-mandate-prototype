@@ -3473,7 +3473,11 @@ function issueMoveOrderToProvince(province) {
     },
     province,
     Date.now(),
-    { samples: 22 }
+    {
+      provinces: movementProvinceList(),
+      samples: 22,
+      samplesPerSegment: 8,
+    }
   );
   if (!order) return false;
   appState.movementOrders[unit.id] = order;
@@ -3486,6 +3490,7 @@ function issueMoveOrderToProvince(province) {
     fromProvinceName: fromProvince ? fromProvince.name : null,
     toProvinceId: order.toProvinceId,
     toProvinceName: province.name,
+    provincePath: order.provincePath,
     path: order.path,
     durationMs: order.durationMs,
   });

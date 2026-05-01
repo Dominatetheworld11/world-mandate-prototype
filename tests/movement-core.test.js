@@ -46,4 +46,26 @@ const nearestProvince = movement.nearestProvinceForUnit(
 
 assert.strictEqual(nearestProvince.id, "munich");
 
+const routedProvinces = [
+  { id: "berlin", center: [13.405, 52.52], neighbors: ["saxony"] },
+  { id: "saxony", center: [12.3731, 51.3397], neighbors: ["berlin", "munich"] },
+  { id: "munich", center: [11.582, 48.1351], neighbors: ["saxony"] },
+];
+const routedOrder = movement.createMoveOrder(
+  { id: "unit-route", coords: routedProvinces[0].center, provinceId: "berlin", speed: 0.2 },
+  routedProvinces[2],
+  2000,
+  { provinces: routedProvinces, samplesPerSegment: 6 }
+);
+
+assert.deepStrictEqual(
+  routedOrder.provincePath,
+  ["berlin", "saxony", "munich"],
+  "movement should route through neighboring provinces"
+);
+assert.ok(
+  routedOrder.path.some((point) => point[0] === routedProvinces[1].center[0] && point[1] === routedProvinces[1].center[1]),
+  "route line should pass through the intermediate province center"
+);
+
 console.log("movement-core ok");
