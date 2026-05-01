@@ -10,6 +10,7 @@ const appState = {
   selectedUnitType: "infantry",
   movementOrders: {},
   unitLocalPositions: {},
+  unitProvinceAssignments: {},
   movementFrame: null,
   movementRenderTick: 0,
   socketReconnectTimer: null,
@@ -3337,6 +3338,27 @@ function regionCenterLngLat(regionId) {
   return center ? [center[1], center[0]] : null;
 }
 
+function movementProvinceList() {
+  return appState.provinceEngine && Array.isArray(appState.provinceEngine.provinces)
+    ? appState.provinceEngine.provinces
+    : [];
+}
+
+function unitCurrentProvince(unit) {
+  const api = movementApi();
+  const provinces = movementProvinceList();
+  if (!api || !unit || !provinces.length) return null;
+  const assignedProvinceId = appState.unitProvinceAssignments[unit.id] || unit.localProvinceId || unit.provinceId;
+  const fallbackCoords = appState.unitLocalPositions[unit.id] || regionCenterLngLat(unit.regionId) || unit.coords;
+  const province = api.nearestProvinceForUnit(
+    { ...unit, localProvinceId: assignedProvinceId },
+    provinces,
+    fallbackCoords
+  );
+  if (province) appState.unitProvinceAssignments[unit.id] = province.id;
+  return province;
+}
+
 function activeMovementOrder(unitId) {
   const order = appState.movementOrders && appState.movementOrders[unitId];
   if (!order || !movementApi()) return null;
@@ -3344,7 +3366,21 @@ function activeMovementOrder(unitId) {
   if (!advanced) return null;
   if (advanced.done) {
     appState.unitLocalPositions[unitId] = advanced.position;
+    if (advanced.toProvinceId) {
+      appState.unitProvinceAssignments[unitId] = advanced.toProvinceId;
+      const unit = appState.game && (appState.game.units || []).find((entry) => entry.id === unitId);
+      if (unit) {
+        unit.localProvinceId = advanced.toProvinceId;
+        unit.provinceId = advanced.toProvinceId;
+      }
+    }
     delete appState.movementOrders[unitId];
+    console.info("[movement] complete", {
+      unitId,
+      fromProvinceId: advanced.fromProvinceId,
+      toProvinceId: advanced.toProvinceId,
+      position: advanced.position,
+    });
     return null;
   }
   appState.movementOrders[unitId] = advanced;
@@ -3356,6 +3392,8 @@ function unitCurrentLngLat(unit) {
   const order = activeMovementOrder(unit.id);
   if (order && order.position) return order.position;
   if (appState.unitLocalPositions && appState.unitLocalPositions[unit.id]) return appState.unitLocalPositions[unit.id];
+  const province = unitCurrentProvince(unit);
+  if (province && Array.isArray(province.center)) return province.center;
   return regionCenterLngLat(unit.regionId);
 }
 
@@ -3396,6 +3434,14 @@ function movementLayerSignature() {
 function selectMovementUnit(unit) {
   if (!unit) return;
   appState.selectedMovementUnitId = unit.id;
+  const province = unitCurrentProvince(unit);
+  console.info("[movement] unit selected", {
+    unitId: unit.id,
+    unitName: unit.name,
+    owner: unit.ownerName || unit.owner,
+    provinceId: province ? province.id : null,
+    provinceName: province ? province.name : null,
+  });
   showToast(`${unit.ownerName || "Unit"} ${unit.name} selected. Click a province to move.`);
   appState.deckLayerSignature = "";
   updateDeckStrategyLayers();
@@ -3406,14 +3452,24 @@ function issueMoveOrderToProvince(province) {
   if (!api || !province || !appState.selectedMovementUnitId || !appState.game) return false;
   const unit = (appState.game.units || []).find((entry) => entry.id === appState.selectedMovementUnitId);
   if (!unit) return false;
-  const coords = unitCurrentLngLat(unit);
+  const fromProvince = unitCurrentProvince(unit);
+  const coords = fromProvince && Array.isArray(fromProvince.center) ? fromProvince.center : unitCurrentLngLat(unit);
   if (!coords) return false;
+  if (fromProvince && fromProvince.id === province.id) {
+    console.info("[movement] ignored same-province order", {
+      unitId: unit.id,
+      provinceId: province.id,
+      provinceName: province.name,
+    });
+    showToast(`${unit.name} is already in ${province.name}.`);
+    return true;
+  }
   const order = api.createMoveOrder(
     {
       ...unit,
       coords,
       speed: unit.movementSpeed || 0.22,
-      provinceId: unit.localProvinceId || unit.regionId,
+      provinceId: fromProvince ? fromProvince.id : unit.localProvinceId || unit.regionId,
     },
     province,
     Date.now(),
@@ -3421,7 +3477,18 @@ function issueMoveOrderToProvince(province) {
   );
   if (!order) return false;
   appState.movementOrders[unit.id] = order;
+  appState.unitLocalPositions[unit.id] = coords;
   appState.selectedMovementUnitId = unit.id;
+  console.info("[movement] order issued", {
+    unitId: unit.id,
+    unitName: unit.name,
+    fromProvinceId: order.fromProvinceId,
+    fromProvinceName: fromProvince ? fromProvince.name : null,
+    toProvinceId: order.toProvinceId,
+    toProvinceName: province.name,
+    path: order.path,
+    durationMs: order.durationMs,
+  });
   showToast(`${unit.name} moving to ${province.name}.`);
   startMovementAnimation();
   return true;
@@ -5097,6 +5164,20 @@ function updateDeckStrategyLayers() {
       collisionEnabled: true,
       getCollisionPriority: (city) => 44 - (city.priority || 4),
       extensions: collisionExtensions,
+      pickable: false,
+    }),
+    new deck.ScatterplotLayer({
+      id: "wm-unit-selection-rings",
+      data: unitData.filter((unit) => unit.selected),
+      visible: step !== "world",
+      getPosition: (unit) => unit.coords,
+      getRadius: 34000,
+      radiusUnits: "meters",
+      stroked: true,
+      filled: false,
+      getLineColor: [244, 255, 222, 238],
+      getLineWidth: 2.25,
+      lineWidthUnits: "pixels",
       pickable: false,
     }),
     new deck.ScatterplotLayer({

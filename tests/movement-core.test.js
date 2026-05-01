@@ -34,4 +34,16 @@ assert.strictEqual(completed.done, true);
 assert.strictEqual(completed.progress, 1);
 assert.deepStrictEqual(completed.position, target.center);
 
+const nearestProvince = movement.nearestProvinceForUnit(
+  { id: "unit-2", owner: "germany" },
+  [
+    { id: "paris", ownerId: "france", center: [2.3522, 48.8566] },
+    { id: "berlin", ownerId: "germany", center: [13.405, 52.52] },
+    { id: "munich", ownerId: "germany", center: [11.582, 48.1351] },
+  ],
+  [12.2, 49.1]
+);
+
+assert.strictEqual(nearestProvince.id, "munich");
+
 console.log("movement-core ok");

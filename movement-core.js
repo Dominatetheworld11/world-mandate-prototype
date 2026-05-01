@@ -77,6 +77,36 @@
     return path[path.length - 1].slice();
   }
 
+  function provinceOwnerKey(province) {
+    return province && (province.ownerId || province.owner || province.country || province.countryId || province.ownerName);
+  }
+
+  function nearestProvinceForUnit(unit, provinces, fallbackCoords) {
+    if (!unit || !Array.isArray(provinces) || !provinces.length) return null;
+    const explicitId = unit.localProvinceId || unit.provinceId;
+    if (explicitId) {
+      const explicit = provinces.find((province) => province && province.id === explicitId);
+      if (explicit) return explicit;
+    }
+
+    const origin = Array.isArray(fallbackCoords) ? fallbackCoords : unit.coords;
+    if (!Array.isArray(origin)) return null;
+    const owner = unit.owner || unit.ownerId || unit.country || unit.countryId;
+    const ownerMatches = provinces.filter((province) => (
+      province &&
+      Array.isArray(province.center) &&
+      (!owner || provinceOwnerKey(province) === owner)
+    ));
+    const candidates = ownerMatches.length
+      ? ownerMatches
+      : provinces.filter((province) => province && Array.isArray(province.center));
+
+    const nearest = candidates
+      .map((province) => ({ province, distance: distanceLngLat(origin, province.center) }))
+      .sort((a, b) => a.distance - b.distance)[0];
+    return nearest ? nearest.province : null;
+  }
+
   function createMoveOrder(unit, targetProvince, now, options) {
     const start = unit && Array.isArray(unit.coords) ? unit.coords.slice() : null;
     const end = targetProvince && Array.isArray(targetProvince.center) ? targetProvince.center.slice() : null;
@@ -116,6 +146,7 @@
     createMoveOrder,
     curvedRoute,
     distanceLngLat,
+    nearestProvinceForUnit,
     positionAlongPath,
   };
 }));
