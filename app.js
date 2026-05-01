@@ -883,8 +883,6 @@ const fallbackProvinceNamePools = {
 };
 
 const genericProvinceNamePool = [
-  "Capital Region",
-  "Metro Region",
   "Highlands",
   "Lowlands",
   "Coastal Belt",
@@ -3642,8 +3640,9 @@ function buildDeckFeatureCache(data) {
   appState.deckFeatureAreaCache = new WeakMap();
 
   const countriesFull = (data.countries.features || []).filter(featureIntersectsDebugBounds);
+  const regionalFeatures = (data.provinces.features || []).filter(featureIntersectsDebugBounds);
   const macroProvinceCountrySources = countriesFull.map((feature) => simplifyFeatureGeometry(feature, 3));
-  const provincesFull = buildCityCenteredMacroProvinceFeatures(macroProvinceCountrySources);
+  const provincesFull = buildCityCenteredMacroProvinceFeatures(macroProvinceCountrySources, regionalFeatures);
   const countriesFar = countriesFull.map((feature) => simplifyFeatureGeometry(feature, 7));
   const countriesMid = countriesFull.map((feature) => simplifyFeatureGeometry(feature, 4));
   const provincesFar = provincesFull.map((feature) => simplifyFeatureGeometry(feature, 6));
@@ -3856,6 +3855,73 @@ function geoRingArea(ring) {
   return Math.abs(area) / 2;
 }
 
+function densifyGeoRing(ring, maxSegment = 0.85) {
+  const closed = closeGeoRing(ring);
+  if (closed.length < 4) return closed;
+  const dense = [];
+
+  for (let index = 0; index < closed.length - 1; index += 1) {
+    const current = closed[index];
+    const next = closed[index + 1];
+    const distance = Math.hypot(next[0] - current[0], next[1] - current[1]);
+    const steps = Math.max(1, Math.ceil(distance / maxSegment));
+    for (let step = 0; step < steps; step += 1) {
+      const t = step / steps;
+      dense.push([
+        current[0] + (next[0] - current[0]) * t,
+        current[1] + (next[1] - current[1]) * t,
+      ]);
+    }
+  }
+
+  dense.push(dense[0]);
+  return dense;
+}
+
+function pointSegmentDistance(point, start, end) {
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
+  const lengthSquared = (dx * dx) + (dy * dy);
+  if (!lengthSquared) return Math.hypot(point[0] - start[0], point[1] - start[1]);
+  const t = Math.max(0, Math.min(1, (((point[0] - start[0]) * dx) + ((point[1] - start[1]) * dy)) / lengthSquared));
+  return Math.hypot(point[0] - (start[0] + dx * t), point[1] - (start[1] + dy * t));
+}
+
+function pointNearCountryBoundary(point, countryRings, threshold = 0.05) {
+  for (const ring of countryRings) {
+    const closed = closeGeoRing(ring);
+    for (let index = 0; index < closed.length - 1; index += 1) {
+      if (pointSegmentDistance(point, closed[index], closed[index + 1]) <= threshold) return true;
+    }
+  }
+  return false;
+}
+
+function organicProvincePoint(point, amplitude) {
+  const [lng, lat] = point;
+  const waveA = Math.sin((lng * 1.73) + (lat * 0.91));
+  const waveB = Math.sin((lng * -0.77) + (lat * 1.41) + 1.8);
+  return [
+    lng + (waveA * amplitude),
+    lat + (waveB * amplitude * 0.62),
+  ];
+}
+
+function organicizeMacroProvinceRing(ring, countryRings, countryFeature) {
+  const dense = densifyGeoRing(ring, 0.62);
+  if (dense.length < 4) return dense;
+  const bounds = featureBounds(countryFeature);
+  const span = bounds ? Math.max(bounds.maxLng - bounds.minLng, bounds.maxLat - bounds.minLat) : 8;
+  const amplitude = Math.max(0.025, Math.min(0.22, span * 0.006));
+  const warped = dense.map((point, index) => {
+    if (index === dense.length - 1) return null;
+    if (pointNearCountryBoundary(point, countryRings)) return point;
+    return organicProvincePoint(point, amplitude);
+  });
+  warped[warped.length - 1] = warped[0];
+  return closeGeoRing(warped);
+}
+
 function clippedVoronoiValue(point, site, other, scale) {
   const px = point[0] * scale;
   const py = point[1];
@@ -3867,7 +3933,7 @@ function clippedVoronoiValue(point, site, other, scale) {
 }
 
 function clipRingToCloserHub(ring, site, other, scale) {
-  const source = closeGeoRing(ring);
+  const source = densifyGeoRing(closeGeoRing(ring), 0.9);
   if (source.length < 4) return [];
   const output = [];
 
@@ -3947,20 +4013,61 @@ function fallbackHubCandidates(feature, targetCount) {
   return candidates;
 }
 
-function buildCountryMacroHubs(feature) {
+function regionFeatureCountryKey(feature) {
+  const props = feature.properties || {};
+  return macroCountryKey(feature) || slugId(props.admin || props.ADMIN || props.geonunit || props.GEONUNIT || "");
+}
+
+function cleanRegionHubName(name) {
+  return String(name || "")
+    .replace(/\b(Province|Region|State|Governorate|Department|County|District|Prefecture)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function regionalHubCandidates(countryFeature, regionalFeatures, targetCount) {
+  const countryKey = macroCountryKey(countryFeature);
+  const project = createDebugProjection();
+  return (regionalFeatures || [])
+    .filter((feature) => regionFeatureCountryKey(feature) === countryKey)
+    .map((feature) => {
+      const center = featureCenter(feature);
+      const coords = [center.lng, center.lat];
+      const name = cleanRegionHubName(debugFeatureName(feature));
+      return {
+        name,
+        coords,
+        area: featureProjectedArea(feature, project),
+      };
+    })
+    .filter((hub) => hub.name && pointInFeature(hub.coords, countryFeature))
+    .sort((left, right) => right.area - left.area)
+    .slice(0, Math.max(targetCount * 3, targetCount + 4));
+}
+
+function addSpacedHub(seeded, seenNames, hub, minDistance) {
+  const nameKey = slugId(hub.name);
+  if (!nameKey || seenNames.has(nameKey)) return false;
+  if (minDistance > 0 && seeded.some((entry) => distanceLngLat(entry.coords, hub.coords) < minDistance)) return false;
+  seenNames.add(nameKey);
+  seeded.push({ name: hub.name, coords: hub.coords, type: hub.type || "regional hub" });
+  return true;
+}
+
+function buildCountryMacroHubs(feature, regionalFeatures = []) {
   const countryKey = macroCountryKey(feature);
   const countryName = countryDisplayNameFromFeature(feature);
   const targetCount = macroProvinceTargetCount(feature);
   const seeded = [];
   const seenNames = new Set();
+  const bounds = featureBounds(feature);
+  const span = bounds ? Math.max(bounds.maxLng - bounds.minLng, bounds.maxLat - bounds.minLat) : 8;
+  const minHubDistance = Math.max(0.18, Math.min(2.2, span / Math.max(5, targetCount * 1.4)));
 
   const explicitHubs = macroProvinceHubs[countryKey] || [];
   for (const hub of explicitHubs) {
     if (!hub || !Array.isArray(hub.coords) || !pointInFeature(hub.coords, feature)) continue;
-    const nameKey = slugId(hub.name);
-    if (seenNames.has(nameKey)) continue;
-    seenNames.add(nameKey);
-    seeded.push({ ...hub, type: hub.type || "city" });
+    addSpacedHub(seeded, seenNames, { ...hub, type: hub.type || "city" }, 0);
     if (seeded.length >= targetCount) break;
   }
 
@@ -3969,10 +4076,12 @@ function buildCountryMacroHubs(feature) {
     if (!node || !Array.isArray(node.coords) || !pointInFeature(node.coords, feature)) continue;
     const nodeCountryKey = node.country ? slugId(node.country) : null;
     if (nodeCountryKey && nodeCountryKey !== countryKey) continue;
-    const nameKey = slugId(node.name);
-    if (seenNames.has(nameKey)) continue;
-    seenNames.add(nameKey);
-    seeded.push({ name: node.name.replace(/\s+(Port|Oil|Steel)$/i, ""), coords: node.coords, type: node.type || "city" });
+    addSpacedHub(seeded, seenNames, { name: node.name.replace(/\s+(Port|Oil|Steel)$/i, ""), coords: node.coords, type: node.type || "city" }, minHubDistance * 0.55);
+  }
+
+  for (const hub of regionalHubCandidates(feature, regionalFeatures, targetCount)) {
+    if (seeded.length >= targetCount) break;
+    addSpacedHub(seeded, seenNames, hub, minHubDistance);
   }
 
   const candidates = fallbackHubCandidates(feature, targetCount);
@@ -4027,14 +4136,14 @@ function macroProvinceFeatureProperties(countryFeature, hub, index, total) {
   };
 }
 
-function buildCityCenteredMacroProvinceFeatures(countryFeatures) {
+function buildCityCenteredMacroProvinceFeatures(countryFeatures, regionalFeatures = []) {
   const features = [];
 
   for (const countryFeature of countryFeatures) {
     const rings = geoPolygonOuterRings(countryFeature);
     if (!rings.length) continue;
 
-    const hubs = buildCountryMacroHubs(countryFeature);
+    const hubs = buildCountryMacroHubs(countryFeature, regionalFeatures);
     if (!hubs.length) continue;
     const countryCenter = featureCenter(countryFeature);
     const scale = Math.max(0.18, Math.cos((countryCenter.lat * Math.PI) / 180));
@@ -4052,7 +4161,8 @@ function buildCityCenteredMacroProvinceFeatures(countryFeatures) {
       const clippedPolygons = [];
       for (const ring of rings) {
         const clipped = clipRingToMacroProvince(ring, hub, hubs, scale);
-        if (clipped.length >= 4 && geoRingArea(clipped) > 0.00001) clippedPolygons.push([clipped]);
+        const organic = organicizeMacroProvinceRing(clipped, rings, countryFeature);
+        if (organic.length >= 4 && geoRingArea(organic) > 0.00001) clippedPolygons.push([organic]);
       }
       if (!clippedPolygons.length) return;
 
