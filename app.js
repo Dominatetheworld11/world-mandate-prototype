@@ -285,6 +285,58 @@ const debugCities = [
   { name: "Baltic Gate", coords: [18.5, 55.5], type: "choke", country: "sweden", badge: "SEA", label: { x: 10, y: 8, anchor: "start" } },
 ];
 
+debugCities.push(
+  { name: "Rabat", coords: [-6.8498, 34.0209], type: "capital", tier: 3, priority: 4, country: "morocco" },
+  { name: "Casablanca", coords: [-7.5898, 33.5731], type: "city", priority: 3, country: "morocco" },
+  { name: "Marrakech", coords: [-7.9811, 31.6295], type: "city", priority: 4, country: "morocco" },
+  { name: "Algiers", coords: [3.0588, 36.7538], type: "capital", tier: 3, priority: 3, country: "algeria" },
+  { name: "Oran", coords: [-0.6337, 35.6971], type: "city", priority: 4, country: "algeria" },
+  { name: "Constantine", coords: [6.6147, 36.3650], type: "city", priority: 4, country: "algeria" },
+  { name: "Tunis", coords: [10.1815, 36.8065], type: "capital", tier: 3, priority: 4, country: "tunisia" },
+  { name: "Tripoli", coords: [13.1913, 32.8872], type: "capital", tier: 3, priority: 3, country: "libya" },
+  { name: "Benghazi", coords: [20.0686, 32.1167], type: "city", priority: 4, country: "libya" },
+  { name: "Sabha", coords: [14.4283, 27.0377], type: "city", priority: 4, country: "libya" },
+  { name: "Nouakchott", coords: [-15.9785, 18.0735], type: "capital", tier: 3, priority: 4, country: "mauritania" },
+  { name: "Atar", coords: [-13.0499, 20.5169], type: "city", priority: 5, country: "mauritania" },
+  { name: "Bamako", coords: [-8.0029, 12.6392], type: "capital", tier: 3, priority: 4, country: "mali" },
+  { name: "Timbuktu", coords: [-3.0074, 16.7666], type: "city", priority: 5, country: "mali" },
+  { name: "Niamey", coords: [2.1254, 13.5116], type: "capital", tier: 3, priority: 4, country: "niger" },
+  { name: "Agadez", coords: [7.9911, 16.9742], type: "city", priority: 5, country: "niger" },
+  { name: "N'Djamena", coords: [15.0444, 12.1348], type: "capital", tier: 3, priority: 4, country: "chad" },
+  { name: "Faya-Largeau", coords: [19.1111, 17.9257], type: "city", priority: 5, country: "chad" },
+  { name: "Khartoum", coords: [32.5599, 15.5007], type: "capital", tier: 3, priority: 4, country: "sudan" },
+  { name: "Port Sudan", coords: [37.2164, 19.6158], type: "city", priority: 4, country: "sudan" },
+  { name: "Juba", coords: [31.5825, 4.8594], type: "capital", tier: 3, priority: 4, country: "south-sudan" },
+  { name: "Addis Ababa", coords: [38.7578, 8.9806], type: "capital", tier: 3, priority: 4, country: "ethiopia" },
+  { name: "Asmara", coords: [38.9251, 15.3229], type: "capital", tier: 3, priority: 5, country: "eritrea" },
+  { name: "Djibouti", coords: [43.1456, 11.5721], type: "capital", tier: 3, priority: 5, country: "djibouti" },
+  { name: "Mogadishu", coords: [45.3182, 2.0469], type: "capital", tier: 3, priority: 4, country: "somalia" },
+  { name: "Nairobi", coords: [36.8219, -1.2921], type: "capital", tier: 3, priority: 3, country: "kenya" },
+  { name: "Mombasa", coords: [39.6682, -4.0435], type: "city", priority: 4, country: "kenya" },
+  { name: "Kampala", coords: [32.5825, 0.3476], type: "capital", tier: 3, priority: 4, country: "uganda" },
+  { name: "Kigali", coords: [30.0619, -1.9441], type: "capital", tier: 3, priority: 5, country: "rwanda" },
+  { name: "Bujumbura", coords: [29.3639, -3.3614], type: "city", priority: 5, country: "burundi" },
+  { name: "Dar es Salaam", coords: [39.2083, -6.7924], type: "city", priority: 4, country: "tanzania" },
+  { name: "Dodoma", coords: [35.7516, -6.1630], type: "capital", tier: 3, priority: 5, country: "tanzania" },
+  { name: "Abuja", coords: [7.4951, 9.0765], type: "capital", tier: 3, priority: 3, country: "nigeria" },
+  { name: "Lagos", coords: [3.3792, 6.5244], type: "city", priority: 3, country: "nigeria" },
+  { name: "Kano", coords: [8.5167, 12.0000], type: "city", priority: 3, country: "nigeria" },
+  { name: "Ibadan", coords: [3.9470, 7.3775], type: "city", priority: 4, country: "nigeria" },
+  { name: "Accra", coords: [-0.1870, 5.6037], type: "capital", tier: 3, priority: 4, country: "ghana" },
+  { name: "Kumasi", coords: [-1.6163, 6.6885], type: "city", priority: 4, country: "ghana" },
+  { name: "Dakar", coords: [-17.4677, 14.7167], type: "capital", tier: 3, priority: 4, country: "senegal" },
+  { name: "Conakry", coords: [-13.5784, 9.6412], type: "capital", tier: 3, priority: 5, country: "guinea" },
+  { name: "Abidjan", coords: [-4.0083, 5.3599], type: "city", priority: 4, country: "c-te-d-ivoire" },
+  { name: "Yamoussoukro", coords: [-5.2767, 6.8276], type: "capital", tier: 3, priority: 5, country: "c-te-d-ivoire" },
+  { name: "Yaounde", coords: [11.5021, 3.8480], type: "capital", tier: 3, priority: 4, country: "cameroon" },
+  { name: "Douala", coords: [9.7085, 4.0511], type: "city", priority: 4, country: "cameroon" },
+  { name: "Bangui", coords: [18.5582, 4.3947], type: "capital", tier: 3, priority: 4, country: "central-african-republic" },
+  { name: "Kinshasa", coords: [15.2663, -4.4419], type: "capital", tier: 3, priority: 3, country: "democratic-republic-of-the-congo" },
+  { name: "Mbuji-Mayi", coords: [23.5898, -6.1360], type: "city", priority: 4, country: "democratic-republic-of-the-congo" },
+  { name: "Brazzaville", coords: [15.2663, -4.2634], type: "capital", tier: 3, priority: 4, country: "republic-of-the-congo" },
+  { name: "Libreville", coords: [9.4673, 0.4162], type: "capital", tier: 3, priority: 5, country: "gabon" }
+);
+
 const debugSupplyRoutes = [
   { name: "Rhine Strategic Corridor", tier: "primary", path: [[4.9, 52.4], [5.8, 51.9], [6.9, 51.5], [7.9, 50.7], [8.7, 50.1], [10.0, 49.2], [11.6, 48.1]] },
   { name: "Channel Command Corridor", tier: "primary", path: [[-0.1276, 51.5072], [0.8, 50.7], [2.3522, 48.8566], [6.1, 49.5], [9.2, 51.1], [13.4050, 52.5200]] },
@@ -699,6 +751,206 @@ Object.assign(macroProvinceHubs, {
     { name: "Limassol", coords: [33.0333, 34.6750] },
     { name: "Larnaca", coords: [33.6292, 34.9229] },
   ],
+  morocco: [
+    { name: "Rabat", coords: [-6.8498, 34.0209] },
+    { name: "Casablanca", coords: [-7.5898, 33.5731] },
+    { name: "Marrakech", coords: [-7.9811, 31.6295] },
+    { name: "Fes", coords: [-4.9778, 34.0181] },
+    { name: "Tangier", coords: [-5.8339, 35.7595] },
+  ],
+  tunisia: [
+    { name: "Tunis", coords: [10.1815, 36.8065] },
+    { name: "Sfax", coords: [10.7603, 34.7406] },
+    { name: "Sousse", coords: [10.6369, 35.8256] },
+    { name: "Kairouan", coords: [10.0963, 35.6781] },
+  ],
+  mauritania: [
+    { name: "Nouakchott", coords: [-15.9785, 18.0735] },
+    { name: "Nouadhibou", coords: [-17.0347, 20.9310] },
+    { name: "Atar", coords: [-13.0499, 20.5169] },
+    { name: "Kiffa", coords: [-11.4045, 16.6166] },
+  ],
+  mali: [
+    { name: "Bamako", coords: [-8.0029, 12.6392] },
+    { name: "Sikasso", coords: [-5.6665, 11.3167] },
+    { name: "Timbuktu", coords: [-3.0074, 16.7666] },
+    { name: "Gao", coords: [-0.0447, 16.2717] },
+    { name: "Mopti", coords: [-4.1833, 14.4833] },
+  ],
+  niger: [
+    { name: "Niamey", coords: [2.1254, 13.5116] },
+    { name: "Agadez", coords: [7.9911, 16.9742] },
+    { name: "Zinder", coords: [8.9881, 13.8072] },
+    { name: "Maradi", coords: [7.1017, 13.5000] },
+    { name: "Tahoua", coords: [5.2692, 14.8903] },
+  ],
+  chad: [
+    { name: "N'Djamena", coords: [15.0444, 12.1348] },
+    { name: "Moundou", coords: [16.0856, 8.5667] },
+    { name: "Abeche", coords: [20.8324, 13.8292] },
+    { name: "Faya-Largeau", coords: [19.1111, 17.9257] },
+    { name: "Sarh", coords: [18.3903, 9.1429] },
+  ],
+  sudan: [
+    { name: "Khartoum", coords: [32.5599, 15.5007] },
+    { name: "Omdurman", coords: [32.4846, 15.6445] },
+    { name: "Port Sudan", coords: [37.2164, 19.6158] },
+    { name: "Nyala", coords: [24.8833, 12.0500] },
+    { name: "Kassala", coords: [36.4000, 15.4500] },
+    { name: "El Obeid", coords: [30.2167, 13.1833] },
+  ],
+  "south-sudan": [
+    { name: "Juba", coords: [31.5825, 4.8594] },
+    { name: "Wau", coords: [27.9916, 7.7029] },
+    { name: "Malakal", coords: [31.6605, 9.5334] },
+    { name: "Bor", coords: [31.5591, 6.2089] },
+  ],
+  ethiopia: [
+    { name: "Addis Ababa", coords: [38.7578, 8.9806] },
+    { name: "Dire Dawa", coords: [41.8661, 9.6009] },
+    { name: "Mekelle", coords: [39.4753, 13.4967] },
+    { name: "Gondar", coords: [37.4667, 12.6000] },
+    { name: "Hawassa", coords: [38.4763, 7.0621] },
+    { name: "Bahir Dar", coords: [37.3908, 11.5742] },
+  ],
+  eritrea: [
+    { name: "Asmara", coords: [38.9251, 15.3229] },
+    { name: "Massawa", coords: [39.4753, 15.6097] },
+    { name: "Keren", coords: [38.4511, 15.7779] },
+  ],
+  djibouti: [
+    { name: "Djibouti", coords: [43.1456, 11.5721] },
+    { name: "Tadjoura", coords: [42.8844, 11.7853] },
+  ],
+  somalia: [
+    { name: "Mogadishu", coords: [45.3182, 2.0469] },
+    { name: "Kismayo", coords: [42.5454, -0.3582] },
+    { name: "Baidoa", coords: [43.6498, 3.1138] },
+    { name: "Bosaso", coords: [49.1816, 11.2755] },
+  ],
+  kenya: [
+    { name: "Nairobi", coords: [36.8219, -1.2921] },
+    { name: "Mombasa", coords: [39.6682, -4.0435] },
+    { name: "Kisumu", coords: [34.7617, -0.0917] },
+    { name: "Nakuru", coords: [36.0800, -0.3031] },
+    { name: "Eldoret", coords: [35.2698, 0.5143] },
+  ],
+  uganda: [
+    { name: "Kampala", coords: [32.5825, 0.3476] },
+    { name: "Gulu", coords: [32.2990, 2.7746] },
+    { name: "Mbarara", coords: [30.6589, -0.6072] },
+    { name: "Jinja", coords: [33.2042, 0.4244] },
+  ],
+  rwanda: [
+    { name: "Kigali", coords: [30.0619, -1.9441] },
+    { name: "Butare", coords: [29.7394, -2.5967] },
+  ],
+  burundi: [
+    { name: "Bujumbura", coords: [29.3639, -3.3614] },
+    { name: "Gitega", coords: [29.9246, -3.4288] },
+  ],
+  tanzania: [
+    { name: "Dodoma", coords: [35.7516, -6.1630] },
+    { name: "Dar es Salaam", coords: [39.2083, -6.7924] },
+    { name: "Arusha", coords: [36.6820, -3.3869] },
+    { name: "Mwanza", coords: [32.9000, -2.5167] },
+    { name: "Mbeya", coords: [33.4500, -8.9000] },
+  ],
+  nigeria: [
+    { name: "Abuja", coords: [7.4951, 9.0765] },
+    { name: "Lagos", coords: [3.3792, 6.5244] },
+    { name: "Kano", coords: [8.5167, 12.0000] },
+    { name: "Ibadan", coords: [3.9470, 7.3775] },
+    { name: "Kaduna", coords: [7.4384, 10.5105] },
+    { name: "Port Harcourt", coords: [7.0498, 4.8156] },
+    { name: "Maiduguri", coords: [13.1571, 11.8333] },
+    { name: "Sokoto", coords: [5.2333, 13.0627] },
+    { name: "Enugu", coords: [7.4988, 6.5244] },
+    { name: "Benin City", coords: [5.6037, 6.3350] },
+  ],
+  ghana: [
+    { name: "Accra", coords: [-0.1870, 5.6037] },
+    { name: "Kumasi", coords: [-1.6163, 6.6885] },
+    { name: "Tamale", coords: [-0.8393, 9.4075] },
+    { name: "Sekondi", coords: [-1.7554, 4.9340] },
+  ],
+  "burkina-faso": [
+    { name: "Ouagadougou", coords: [-1.5197, 12.3714] },
+    { name: "Bobo-Dioulasso", coords: [-4.2979, 11.1771] },
+    { name: "Koudougou", coords: [-2.3627, 12.2526] },
+  ],
+  senegal: [
+    { name: "Dakar", coords: [-17.4677, 14.7167] },
+    { name: "Touba", coords: [-15.8833, 14.8667] },
+    { name: "Saint-Louis", coords: [-16.4896, 16.0326] },
+    { name: "Ziguinchor", coords: [-16.2833, 12.5833] },
+  ],
+  guinea: [
+    { name: "Conakry", coords: [-13.5784, 9.6412] },
+    { name: "Kankan", coords: [-9.3057, 10.3854] },
+    { name: "Nzerekore", coords: [-8.8253, 7.7478] },
+    { name: "Labe", coords: [-12.3000, 11.3167] },
+  ],
+  "c-te-d-ivoire": [
+    { name: "Yamoussoukro", coords: [-5.2767, 6.8276] },
+    { name: "Abidjan", coords: [-4.0083, 5.3599] },
+    { name: "Bouake", coords: [-5.0303, 7.6906] },
+    { name: "Korhogo", coords: [-5.6333, 9.4500] },
+  ],
+  "ivory-coast": [
+    { name: "Yamoussoukro", coords: [-5.2767, 6.8276] },
+    { name: "Abidjan", coords: [-4.0083, 5.3599] },
+    { name: "Bouake", coords: [-5.0303, 7.6906] },
+    { name: "Korhogo", coords: [-5.6333, 9.4500] },
+  ],
+  cameroon: [
+    { name: "Yaounde", coords: [11.5021, 3.8480] },
+    { name: "Douala", coords: [9.7085, 4.0511] },
+    { name: "Garoua", coords: [13.3923, 9.3014] },
+    { name: "Maroua", coords: [14.3159, 10.5956] },
+    { name: "Bamenda", coords: [10.1591, 5.9631] },
+  ],
+  "central-african-republic": [
+    { name: "Bangui", coords: [18.5582, 4.3947] },
+    { name: "Bambari", coords: [20.6757, 5.7679] },
+    { name: "Berberati", coords: [15.7864, 4.2612] },
+    { name: "Bria", coords: [21.9863, 6.5423] },
+  ],
+  "democratic-republic-of-the-congo": [
+    { name: "Kinshasa", coords: [15.2663, -4.4419] },
+    { name: "Lubumbashi", coords: [27.4794, -11.6876] },
+    { name: "Mbuji-Mayi", coords: [23.5898, -6.1360] },
+    { name: "Kisangani", coords: [25.2000, 0.5167] },
+    { name: "Goma", coords: [29.2228, -1.6741] },
+    { name: "Kananga", coords: [22.4178, -5.8962] },
+    { name: "Bukavu", coords: [28.8608, -2.5083] },
+    { name: "Mbandaka", coords: [18.2603, 0.0487] },
+  ],
+  "dem-rep-congo": [
+    { name: "Kinshasa", coords: [15.2663, -4.4419] },
+    { name: "Lubumbashi", coords: [27.4794, -11.6876] },
+    { name: "Mbuji-Mayi", coords: [23.5898, -6.1360] },
+    { name: "Kisangani", coords: [25.2000, 0.5167] },
+    { name: "Goma", coords: [29.2228, -1.6741] },
+    { name: "Kananga", coords: [22.4178, -5.8962] },
+    { name: "Bukavu", coords: [28.8608, -2.5083] },
+    { name: "Mbandaka", coords: [18.2603, 0.0487] },
+  ],
+  "republic-of-the-congo": [
+    { name: "Brazzaville", coords: [15.2663, -4.2634] },
+    { name: "Pointe-Noire", coords: [11.8664, -4.7692] },
+    { name: "Dolisie", coords: [12.6667, -4.2000] },
+  ],
+  congo: [
+    { name: "Brazzaville", coords: [15.2663, -4.2634] },
+    { name: "Pointe-Noire", coords: [11.8664, -4.7692] },
+    { name: "Dolisie", coords: [12.6667, -4.2000] },
+  ],
+  gabon: [
+    { name: "Libreville", coords: [9.4673, 0.4162] },
+    { name: "Port-Gentil", coords: [8.7815, -0.7193] },
+    { name: "Franceville", coords: [13.5836, -1.6333] },
+  ],
 });
 
 const macroProvinceCountOverrides = {
@@ -843,6 +1095,36 @@ Object.assign(macroProvinceCountOverrides, {
   japan: 8,
   mexico: 10,
   "south-africa": 8,
+  tunisia: 4,
+  mauritania: 4,
+  mali: 6,
+  niger: 5,
+  chad: 5,
+  sudan: 6,
+  "south-sudan": 4,
+  ethiopia: 6,
+  eritrea: 3,
+  djibouti: 2,
+  somalia: 4,
+  kenya: 5,
+  uganda: 4,
+  rwanda: 2,
+  burundi: 2,
+  tanzania: 5,
+  nigeria: 10,
+  ghana: 4,
+  "burkina-faso": 3,
+  senegal: 4,
+  guinea: 4,
+  "c-te-d-ivoire": 4,
+  "ivory-coast": 4,
+  cameroon: 5,
+  "central-african-republic": 4,
+  "democratic-republic-of-the-congo": 8,
+  "dem-rep-congo": 8,
+  "republic-of-the-congo": 3,
+  congo: 3,
+  gabon: 3,
 });
 
 const fallbackProvinceNamePools = {
@@ -881,25 +1163,6 @@ const fallbackProvinceNamePools = {
   uk: ["London", "Birmingham", "Manchester", "Glasgow", "Cardiff", "Belfast"],
   "united-kingdom": ["London", "Birmingham", "Manchester", "Glasgow", "Cardiff", "Belfast"],
 };
-
-const genericProvinceNamePool = [
-  "Highlands",
-  "Lowlands",
-  "Coastal Belt",
-  "River Basin",
-  "Delta Region",
-  "Industrial Belt",
-  "Plateau",
-  "Steppe Basin",
-  "Desert Basin",
-  "Island Region",
-  "Gulf Region",
-  "Valley Region",
-  "Harbor Region",
-  "Mining Belt",
-  "Forest Belt",
-  "Agrarian Belt",
-];
 
 const debugProjectionBounds = {
   minLng: -170,
@@ -3037,11 +3300,12 @@ function deckCountryLabels(countryFeatures, step) {
 }
 
 function deckNodeData(step) {
-  if (step === "countries" || step === "world") return [];
+  if (step === "world") return [];
   return debugCities.filter((city) => {
     if (city.type === "resource" || city.type === "choke") return false;
     if (city.type === "airbase") return step === "tactical";
     if (city.type === "port") return step === "tactical" && (city.priority || 5) <= 4;
+    if (step === "countries") return (city.priority || 5) <= 3;
     if (step === "capitals") {
       if (city.type === "capital") return (city.priority || 4) <= 4;
       return (city.priority || 5) <= 3;
@@ -3972,8 +4236,7 @@ function clipRingToMacroProvince(ring, site, hubs, scale) {
 function fallbackHubName(countryKey, countryName, index) {
   const countryPool = fallbackProvinceNamePools[countryKey] || fallbackProvinceNamePools[slugId(countryName)];
   if (countryPool && countryPool.length) return countryPool[index % countryPool.length];
-  const regionName = genericProvinceNamePool[index % genericProvinceNamePool.length];
-  return `${countryName} ${regionName}`;
+  return index === 0 ? countryName : "";
 }
 
 function fallbackHubCandidates(feature, targetCount) {
@@ -4103,6 +4366,7 @@ function buildCountryMacroHubs(feature, regionalFeatures = []) {
     if (bestIndex < 0) break;
     const [candidate] = candidates.splice(bestIndex, 1);
     const name = fallbackHubName(countryKey, countryName, seeded.length);
+    if (!name) continue;
     const nameKey = slugId(name);
     if (seenNames.has(nameKey)) continue;
     seenNames.add(nameKey);
@@ -4677,7 +4941,7 @@ function updateDeckStrategyLayers() {
   const macroLabelData = (step === "capitals" || step === "tactical")
     ? cache.macroProvinceLabels.filter((label) => label.position[0] >= visibleBounds.minLng && label.position[0] <= visibleBounds.maxLng && label.position[1] >= visibleBounds.minLat && label.position[1] <= visibleBounds.maxLat)
     : [];
-  const showCapitals = step === "capitals" || step === "tactical";
+  const showCapitals = step !== "world";
   const showProvinces = true;
   const showProvinceLabels = step === "tactical";
   const movementRoutes = deckMovementRouteData()
@@ -4700,7 +4964,7 @@ function updateDeckStrategyLayers() {
       stroked: false,
       filled: true,
       getFillColor: deckCountryColor,
-      opacity: 0.58,
+      opacity: 0.44,
       pickable: true,
       autoHighlight: true,
       highlightColor: [240, 245, 230, 26],
@@ -4817,7 +5081,7 @@ function updateDeckStrategyLayers() {
     new deck.TextLayer({
       id: "wm-city-labels",
       data: deckNodeData(step),
-      visible: showCapitals && step !== "countries",
+      visible: showCapitals,
       getPosition: (city) => city.coords,
       getText: (city) => city.name,
       getSize: cityLabelSize,
