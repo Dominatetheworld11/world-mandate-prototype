@@ -3120,10 +3120,10 @@ function initMapLibreDeckMap() {
       x: event.point.x,
       y: event.point.y,
       radius: 5,
-      layerIds: ["wm-unit-markers", "wm-unit-labels", "wm-province-borders", "wm-country-terrain"],
+      layerIds: ["wm-unit-icons", "wm-province-borders", "wm-country-terrain"],
     });
     if (!picked || !picked.object) return;
-    if (picked.layer && (picked.layer.id === "wm-unit-markers" || picked.layer.id === "wm-unit-labels")) {
+    if (picked.layer && picked.layer.id === "wm-unit-icons") {
       selectMovementUnit(picked.object);
       return;
     }
@@ -3407,6 +3407,7 @@ function deckUnitData(step) {
       return {
         ...unit,
         coords,
+        heading: unitVisualHeading(unit, coords, order),
         moving: Boolean(order),
         selected: appState.selectedMovementUnitId === unit.id,
         progress: order ? order.progress || 0 : 0,
@@ -3893,6 +3894,33 @@ const cityMarkerIcons = {
   },
 };
 
+const unitVisualIcons = {
+  infantry: {
+    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><ellipse cx="48" cy="72" rx="24" ry="8" fill="#061015" opacity=".45"/><path d="M48 17c-8 0-15 6-15 14v4h30v-4c0-8-7-14-15-14z" fill="#314037"/><path d="M34 34h28l-5 27H39z" fill="#465b4b"/><path d="M39 38h18l-3 17H42z" fill="#6f836a" opacity=".75"/><path d="M37 61l-11 15h9l11-15zM59 61l11 15h-9L50 61z" fill="#26352d"/><path d="M33 45l-15 12 4 6 18-13zM63 42l17 9-3 7-19-8z" fill="#2d3b33"/><path d="M19 56l39-7 1 5-39 7z" fill="#151d1b"/><circle cx="48" cy="28" r="8" fill="#1f2a25"/><path d="M35 30c5-6 21-6 26 0l-1-8H36z" fill="#6e7e67"/><path d="M29 74h39" stroke="#d7dbc4" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg>'),
+    width: 96,
+    height: 96,
+    anchorX: 48,
+    anchorY: 58,
+    mask: false,
+  },
+  armor: {
+    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 90"><ellipse cx="55" cy="68" rx="38" ry="10" fill="#061015" opacity=".42"/><path d="M20 50l14-18h42l16 18-9 17H29z" fill="#26352f"/><path d="M32 36h39l12 14H22z" fill="#56684d"/><path d="M39 28h29l8 11H31z" fill="#718067"/><path d="M67 33l27-8 3 6-27 9z" fill="#202b25"/><path d="M28 55h56" stroke="#101817" stroke-width="9" stroke-linecap="round"/><path d="M31 55h50" stroke="#8b947b" stroke-width="4" stroke-linecap="round" opacity=".75"/><circle cx="35" cy="55" r="4" fill="#1b2520"/><circle cx="50" cy="55" r="4" fill="#1b2520"/><circle cx="65" cy="55" r="4" fill="#1b2520"/><circle cx="79" cy="55" r="4" fill="#1b2520"/><path d="M35 40h22" stroke="#d6d8bd" stroke-width="3" stroke-linecap="round" opacity=".45"/></svg>'),
+    width: 110,
+    height: 90,
+    anchorX: 55,
+    anchorY: 55,
+    mask: false,
+  },
+  technical: {
+    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 86"><ellipse cx="52" cy="65" rx="34" ry="9" fill="#061015" opacity=".42"/><path d="M22 48l10-15h32l16 14-7 14H29z" fill="#2c3a31"/><path d="M34 35h24l13 12H27z" fill="#657560"/><path d="M58 31l10-9 4 4-7 10z" fill="#1b2420"/><path d="M66 24l17-6 2 5-16 6z" fill="#18211e"/><circle cx="34" cy="59" r="7" fill="#101817"/><circle cx="70" cy="59" r="7" fill="#101817"/><circle cx="34" cy="59" r="3" fill="#a5ac94"/><circle cx="70" cy="59" r="3" fill="#a5ac94"/><path d="M37 40h14" stroke="#d7dac0" stroke-width="3" stroke-linecap="round" opacity=".5"/></svg>'),
+    width: 104,
+    height: 86,
+    anchorX: 52,
+    anchorY: 54,
+    mask: false,
+  },
+};
+
 function cityMarkerIcon(city) {
   return cityMarkerIcons[city.type] || cityMarkerIcons.city;
 }
@@ -3925,6 +3953,65 @@ function cityLabelColor(city) {
   if (city.type === "port") return [170, 218, 224, 112];
   if (city.type === "airbase") return [190, 210, 232, 108];
   return [216, 226, 216, 96];
+}
+
+function unitVisualType(unit) {
+  if (!unit) return "technical";
+  if (unit.type === "infantry") return "infantry";
+  if (unit.type === "tanks" || unit.type === "navy") return "armor";
+  return "technical";
+}
+
+function unitVisualIcon(unit) {
+  return unitVisualIcons[unitVisualType(unit)] || unitVisualIcons.technical;
+}
+
+function unitVisualSize(unit) {
+  const type = unitVisualType(unit);
+  const base = type === "armor" ? 32 : type === "infantry" ? 29 : 30;
+  return base + (unit && unit.selected ? 3 : 0);
+}
+
+function bearingDegrees(from, to) {
+  if (!Array.isArray(from) || !Array.isArray(to)) return 0;
+  const avgLat = ((Number(from[1]) + Number(to[1])) / 2) * Math.PI / 180;
+  const dx = (Number(to[0]) - Number(from[0])) * Math.cos(avgLat);
+  const dy = Number(to[1]) - Number(from[1]);
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || (Math.abs(dx) + Math.abs(dy)) <= 0.000001) return 0;
+  return (Math.atan2(dx, dy) * 180) / Math.PI;
+}
+
+function headingFromPath(path, coords) {
+  if (!Array.isArray(path) || path.length < 2) return null;
+  let bestIndex = 1;
+  let bestDistance = Infinity;
+  for (let index = 1; index < path.length; index += 1) {
+    const midpoint = [
+      (path[index - 1][0] + path[index][0]) / 2,
+      (path[index - 1][1] + path[index][1]) / 2,
+    ];
+    const distance = distanceLngLat(coords, midpoint);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  }
+  return bearingDegrees(path[bestIndex - 1], path[bestIndex]);
+}
+
+function unitVisualHeading(unit, coords, order) {
+  if (order && Array.isArray(order.segments) && order.segments.length) {
+    const rawSegmentIndex = Number(order.currentSegmentIndex);
+    const segmentIndex = Number.isFinite(rawSegmentIndex) ? rawSegmentIndex : 0;
+    const segment = order.segments[Math.max(0, Math.min(order.segments.length - 1, segmentIndex))];
+    const segmentHeading = headingFromPath(segment && segment.path, coords);
+    if (Number.isFinite(segmentHeading)) return segmentHeading;
+  }
+  if (order && Array.isArray(order.path)) {
+    const routeHeading = headingFromPath(order.path, coords);
+    if (Number.isFinite(routeHeading)) return routeHeading;
+  }
+  return (stableHash(unit && unit.id) % 80) - 40;
 }
 
 function routeTierWeight(route) {
@@ -5217,43 +5304,16 @@ function updateDeckStrategyLayers() {
       lineWidthUnits: "pixels",
       pickable: false,
     }),
-    new deck.ScatterplotLayer({
-      id: "wm-unit-markers",
+    new deck.IconLayer({
+      id: "wm-unit-icons",
       data: unitData,
       visible: step !== "world",
       getPosition: (unit) => unit.coords,
-      getRadius: (unit) => unit.selected ? 26000 : unit.moving ? 22000 : 19000,
-      radiusUnits: "meters",
-      getFillColor: (unit) => unit.selected
-        ? [132, 214, 118, 164]
-        : unit.relation === "war"
-          ? [220, 88, 78, 138]
-          : [48, 63, 54, 176],
-      getLineColor: (unit) => unit.selected ? [244, 255, 222, 232] : [224, 236, 216, 172],
-      getLineWidth: (unit) => unit.selected ? 2 : 1.25,
-      lineWidthUnits: "pixels",
-      stroked: true,
-      filled: true,
-      pickable: true,
-      onClick: (info) => {
-        if (info && info.object) selectMovementUnit(info.object);
-      },
-    }),
-    new deck.TextLayer({
-      id: "wm-unit-labels",
-      data: unitData,
-      visible: step !== "world",
-      getPosition: (unit) => unit.coords,
-      getText: (unit) => unit.icon || "U",
-      getSize: (unit) => unit.selected ? 10.5 : 9,
-      getColor: [246, 251, 238, 238],
+      getIcon: unitVisualIcon,
+      getSize: unitVisualSize,
+      getAngle: (unit) => unit.heading || 0,
       sizeUnits: "pixels",
-      fontFamily: "Rajdhani, Inter, sans-serif",
-      fontWeight: 800,
-      getTextAnchor: "middle",
-      getAlignmentBaseline: "center",
-      outlineWidth: 2,
-      outlineColor: [0, 0, 0, 210],
+      billboard: true,
       pickable: true,
       onClick: (info) => {
         if (info && info.object) selectMovementUnit(info.object);

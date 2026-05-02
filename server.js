@@ -866,6 +866,7 @@ function makeInitialState(template = serverTemplates[0]) {
     const homeCity = state.regions.find((region) => region.owner === country.id && region.type === "city");
     if (homeCity) {
       state.units.push(createUnit(state, country.id, homeCity.id, "infantry"));
+      if (country.id === "germany") state.units.push(createUnit(state, country.id, homeCity.id, "tanks"));
       if (country.id === "russia") state.units.push(createUnit(state, country.id, homeCity.id, "tanks"));
       if (country.id === "usa") state.units.push(createUnit(state, country.id, homeCity.id, "jets"));
     }
