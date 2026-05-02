@@ -3398,16 +3398,31 @@ function unitCurrentLngLat(unit) {
 }
 
 function deckUnitData(step) {
-  if (!appState.game || step === "world") return [];
+  if (!appState.game) return [];
+  const provinceStackCounts = new Map();
   return (appState.game.units || [])
     .map((unit) => {
       const coords = unitCurrentLngLat(unit);
       if (!coords) return null;
       const order = appState.movementOrders && appState.movementOrders[unit.id];
+      const province = unitCurrentProvince(unit);
+      const stackKey = province ? province.id : `${coords[0].toFixed(2)}:${coords[1].toFixed(2)}`;
+      const stackIndex = provinceStackCounts.get(stackKey) || 0;
+      provinceStackCounts.set(stackKey, stackIndex + 1);
+      const stackOffset = step === "world" ? 0.18 : 0.08;
+      const displayCoords = order
+        ? coords
+        : [
+          coords[0] + ((stackIndex % 2 === 0 ? -1 : 1) * stackOffset * Math.ceil(stackIndex / 2)),
+          coords[1] + ((stackIndex % 2 === 0 ? 1 : -1) * stackOffset * Math.ceil(stackIndex / 2)),
+        ];
       return {
         ...unit,
-        coords,
-        heading: unitVisualHeading(unit, coords, order),
+        coords: displayCoords,
+        trueCoords: coords,
+        provinceId: province ? province.id : unit.provinceId,
+        provinceName: province ? province.name : null,
+        heading: unitVisualHeading(unit, displayCoords, order),
         moving: Boolean(order),
         selected: appState.selectedMovementUnitId === unit.id,
         progress: order ? order.progress || 0 : 0,
@@ -5293,7 +5308,7 @@ function updateDeckStrategyLayers() {
     new deck.ScatterplotLayer({
       id: "wm-unit-selection-rings",
       data: unitData.filter((unit) => unit.selected),
-      visible: step !== "world",
+      visible: true,
       getPosition: (unit) => unit.coords,
       getRadius: 34000,
       radiusUnits: "meters",
@@ -5307,7 +5322,7 @@ function updateDeckStrategyLayers() {
     new deck.IconLayer({
       id: "wm-unit-icons",
       data: unitData,
-      visible: step !== "world",
+      visible: true,
       getPosition: (unit) => unit.coords,
       getIcon: unitVisualIcon,
       getSize: unitVisualSize,
