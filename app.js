@@ -3911,29 +3911,38 @@ const cityMarkerIcons = {
 
 const unitVisualIcons = {
   infantry: {
-    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><ellipse cx="48" cy="72" rx="24" ry="8" fill="#061015" opacity=".45"/><path d="M48 17c-8 0-15 6-15 14v4h30v-4c0-8-7-14-15-14z" fill="#314037"/><path d="M34 34h28l-5 27H39z" fill="#465b4b"/><path d="M39 38h18l-3 17H42z" fill="#6f836a" opacity=".75"/><path d="M37 61l-11 15h9l11-15zM59 61l11 15h-9L50 61z" fill="#26352d"/><path d="M33 45l-15 12 4 6 18-13zM63 42l17 9-3 7-19-8z" fill="#2d3b33"/><path d="M19 56l39-7 1 5-39 7z" fill="#151d1b"/><circle cx="48" cy="28" r="8" fill="#1f2a25"/><path d="M35 30c5-6 21-6 26 0l-1-8H36z" fill="#6e7e67"/><path d="M29 74h39" stroke="#d7dbc4" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg>'),
-    width: 96,
-    height: 96,
-    anchorX: 48,
-    anchorY: 58,
+    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112"><defs><linearGradient id="g" x1="24" y1="22" x2="82" y2="86" gradientUnits="userSpaceOnUse"><stop stop-color="#8d9b78"/><stop offset=".52" stop-color="#495c43"/><stop offset="1" stop-color="#1f2d28"/></linearGradient><linearGradient id="m" x1="38" y1="18" x2="70" y2="42"><stop stop-color="#9ca887"/><stop offset="1" stop-color="#465740"/></linearGradient></defs><path d="M52 18c-10 0-17 7-17 17v6h34v-6c0-10-7-17-17-17z" fill="#25332d"/><path d="M37 34c7-8 25-8 31 0l-1-10H38z" fill="url(#m)"/><circle cx="52" cy="34" r="8" fill="#18231f"/><path d="M34 45l21-8 24 13-10 32-31-2z" fill="url(#g)"/><path d="M42 49l14-5 13 8-6 17-18-2z" fill="#aeb68e" opacity=".28"/><path d="M39 78l-15 17h11l16-16zM68 79l17 16H74L58 79z" fill="#202c27"/><path d="M35 58L14 70l5 8 25-13zM74 54l23 9-4 9-25-10z" fill="#26362f"/><path d="M17 70l52-14 2 6-52 15z" fill="#101817"/><path d="M28 91h56" stroke="#dfe1c8" stroke-width="3" stroke-linecap="round" opacity=".42"/><path d="M35 45l20-8 24 13" fill="none" stroke="#d8dbc0" stroke-width="2.2" opacity=".28"/></svg>'),
+    width: 112,
+    height: 112,
+    anchorX: 56,
+    anchorY: 72,
     mask: false,
   },
   armor: {
-    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 90"><ellipse cx="55" cy="68" rx="38" ry="10" fill="#061015" opacity=".42"/><path d="M20 50l14-18h42l16 18-9 17H29z" fill="#26352f"/><path d="M32 36h39l12 14H22z" fill="#56684d"/><path d="M39 28h29l8 11H31z" fill="#718067"/><path d="M67 33l27-8 3 6-27 9z" fill="#202b25"/><path d="M28 55h56" stroke="#101817" stroke-width="9" stroke-linecap="round"/><path d="M31 55h50" stroke="#8b947b" stroke-width="4" stroke-linecap="round" opacity=".75"/><circle cx="35" cy="55" r="4" fill="#1b2520"/><circle cx="50" cy="55" r="4" fill="#1b2520"/><circle cx="65" cy="55" r="4" fill="#1b2520"/><circle cx="79" cy="55" r="4" fill="#1b2520"/><path d="M35 40h22" stroke="#d6d8bd" stroke-width="3" stroke-linecap="round" opacity=".45"/></svg>'),
-    width: 110,
-    height: 90,
-    anchorX: 55,
-    anchorY: 55,
+    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 104"><defs><linearGradient id="h" x1="26" y1="28" x2="104" y2="79"><stop stop-color="#879271"/><stop offset=".48" stop-color="#516044"/><stop offset="1" stop-color="#202d28"/></linearGradient><linearGradient id="t" x1="43" y1="22" x2="85" y2="48"><stop stop-color="#9aa482"/><stop offset="1" stop-color="#46533e"/></linearGradient></defs><path d="M19 64l18-23h52l22 21-12 22H32z" fill="#1f2d28"/><path d="M36 43h51l18 19H23z" fill="url(#h)"/><path d="M45 30h36l12 14H34z" fill="url(#t)"/><path d="M82 35l34-10 4 7-36 13z" fill="#16211e"/><path d="M31 68h70" stroke="#0c1514" stroke-width="12" stroke-linecap="round"/><path d="M35 68h62" stroke="#899178" stroke-width="5" stroke-linecap="round" opacity=".75"/><circle cx="42" cy="68" r="5" fill="#18231f"/><circle cx="60" cy="68" r="5" fill="#18231f"/><circle cx="78" cy="68" r="5" fill="#18231f"/><circle cx="94" cy="68" r="5" fill="#18231f"/><path d="M42 48h29" stroke="#e0dfc2" stroke-width="3" stroke-linecap="round" opacity=".42"/><path d="M24 63l13-20h52l17 18" fill="none" stroke="#d9dcc0" stroke-width="2" opacity=".25"/></svg>'),
+    width: 128,
+    height: 104,
+    anchorX: 64,
+    anchorY: 72,
     mask: false,
   },
   technical: {
-    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 86"><ellipse cx="52" cy="65" rx="34" ry="9" fill="#061015" opacity=".42"/><path d="M22 48l10-15h32l16 14-7 14H29z" fill="#2c3a31"/><path d="M34 35h24l13 12H27z" fill="#657560"/><path d="M58 31l10-9 4 4-7 10z" fill="#1b2420"/><path d="M66 24l17-6 2 5-16 6z" fill="#18211e"/><circle cx="34" cy="59" r="7" fill="#101817"/><circle cx="70" cy="59" r="7" fill="#101817"/><circle cx="34" cy="59" r="3" fill="#a5ac94"/><circle cx="70" cy="59" r="3" fill="#a5ac94"/><path d="M37 40h14" stroke="#d7dac0" stroke-width="3" stroke-linecap="round" opacity=".5"/></svg>'),
-    width: 104,
-    height: 86,
-    anchorX: 52,
-    anchorY: 54,
+    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96"><defs><linearGradient id="v" x1="26" y1="28" x2="91" y2="71"><stop stop-color="#8f9976"/><stop offset=".5" stop-color="#4e6046"/><stop offset="1" stop-color="#22322b"/></linearGradient></defs><path d="M23 58l14-22h39l21 19-10 21H34z" fill="#1e2c27"/><path d="M38 39h31l18 16H29z" fill="url(#v)"/><path d="M66 34l13-12 5 5-10 13z" fill="#17221f"/><path d="M76 25l24-8 3 6-25 9z" fill="#121c1a"/><circle cx="42" cy="73" r="9" fill="#0d1615"/><circle cx="80" cy="73" r="9" fill="#0d1615"/><circle cx="42" cy="73" r="4" fill="#a5aa92"/><circle cx="80" cy="73" r="4" fill="#a5aa92"/><path d="M41 47h20" stroke="#dddfc3" stroke-width="3" stroke-linecap="round" opacity=".44"/><path d="M29 58h58" stroke="#dfe0c5" stroke-width="1.8" opacity=".22"/></svg>'),
+    width: 120,
+    height: 96,
+    anchorX: 60,
+    anchorY: 72,
     mask: false,
   },
+};
+
+const unitShadowIcon = {
+  url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 64"><ellipse cx="64" cy="34" rx="47" ry="14" fill="#000" opacity=".42"/><ellipse cx="64" cy="34" rx="31" ry="8" fill="#000" opacity=".24"/></svg>'),
+  width: 128,
+  height: 64,
+  anchorX: 64,
+  anchorY: 35,
+  mask: false,
 };
 
 function cityMarkerIcon(city) {
@@ -3983,8 +3992,12 @@ function unitVisualIcon(unit) {
 
 function unitVisualSize(unit) {
   const type = unitVisualType(unit);
-  const base = type === "armor" ? 32 : type === "infantry" ? 29 : 30;
-  return base + (unit && unit.selected ? 3 : 0);
+  const base = type === "armor" ? 38 : type === "infantry" ? 34 : 36;
+  return base + (unit && unit.selected ? 4 : 0);
+}
+
+function unitShadowSize(unit) {
+  return unitVisualSize(unit) * 1.05;
 }
 
 function bearingDegrees(from, to) {
@@ -5336,6 +5349,19 @@ function updateDeckStrategyLayers() {
       getLineColor: [244, 255, 222, 238],
       getLineWidth: 2.25,
       lineWidthUnits: "pixels",
+      pickable: false,
+    }),
+    new deck.IconLayer({
+      id: "wm-unit-shadows",
+      data: unitData,
+      visible: true,
+      getPosition: (unit) => unit.coords,
+      getIcon: () => unitShadowIcon,
+      getSize: unitShadowSize,
+      getAngle: (unit) => unit.heading || 0,
+      getPixelOffset: [0, 7],
+      sizeUnits: "pixels",
+      billboard: true,
       pickable: false,
     }),
     new deck.IconLayer({
