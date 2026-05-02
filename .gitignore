@@ -1,4 +1,7 @@
 node_modules/
+.tmp*
+cache/
+logs/
 npm-debug.log*
 
 .env
@@ -7,6 +10,7 @@ npm-debug.log*
 
 third_party/
 *.zip
+*.tar
 tools/*.exe
 tools/*.msi
 

@@ -42,6 +42,8 @@ const appState = {
   deckViewFrame: null,
   deckLayerFrame: null,
   deckLayerSignature: "",
+  deckCurrentLayers: [],
+  deckUnitLayerSignature: "",
   deckZoomLevelIndex: 3,
   deckZoomWheelLockUntil: 0,
   deckZoomSnapFrame: null,
@@ -129,6 +131,18 @@ const decisionActions = $("decision-actions");
 const militaryOverview = $("military-overview");
 const winStatus = $("win-status");
 const toast = $("toast");
+
+function showCommandCard(...classes) {
+  if (!provinceCommandCard) return;
+  provinceCommandCard.hidden = false;
+  provinceCommandCard.classList.add("active", ...classes);
+}
+
+function hideCommandCard() {
+  if (!provinceCommandCard) return;
+  provinceCommandCard.classList.remove("active", "basic-province", "unit-command");
+  provinceCommandCard.hidden = true;
+}
 
 const resourceLabels = {
   steel: "Steel",
@@ -1471,6 +1485,7 @@ function switchScreen() {
   screenAuth.classList.toggle("active", appState.screen === "auth");
   screenLobby.classList.toggle("active", appState.screen === "lobby");
   screenGame.classList.toggle("active", appState.screen === "game");
+  document.body.classList.toggle("game-map-only", appState.screen === "game");
 }
 
 function renderStatus() {
@@ -1975,7 +1990,7 @@ function renderSelectedRegion() {
   }
 
   if (selectedNode) {
-    if (provinceCommandCard) provinceCommandCard.classList.add("active");
+    showCommandCard();
     const owner = appState.game.countries.find((entry) => entry.id === selectedNode.country);
     selectedRegionType.textContent = nodeKindLabels[selectedNode.kind] || "node";
     selectedRegion.innerHTML = `
@@ -1997,7 +2012,7 @@ function renderSelectedRegion() {
   }
 
   if (appState.selectedProvince) {
-    if (provinceCommandCard) provinceCommandCard.classList.add("active");
+    showCommandCard();
     const province = appState.selectedProvince;
     const owner = province.country;
     const summary = provinceValueSummary(province);
@@ -2026,9 +2041,9 @@ function renderSelectedRegion() {
   }
 
   if (!region) {
-    if (provinceCommandCard) provinceCommandCard.classList.remove("active", "basic-province");
+    hideCommandCard();
     selectedRegionType.textContent = "--";
-    selectedRegion.innerHTML = "<p>Select a region on the map.</p>";
+    selectedRegion.innerHTML = "";
     buildActions.innerHTML = "";
     recruitActions.innerHTML = "";
     movementActions.innerHTML = "";
@@ -2042,7 +2057,7 @@ function renderSelectedRegion() {
     : "";
 
   selectedRegionType.textContent = region.type;
-  if (provinceCommandCard) provinceCommandCard.classList.add("active");
+  showCommandCard();
   selectedRegion.innerHTML = `
     <h3>${region.name}</h3>
     <p><strong>Owner:</strong> ${region.ownerName}</p>
@@ -2064,7 +2079,7 @@ function renderSelectedRegion() {
 function renderDebugProvinceCommand() {
   const province = appState.selectedProvince;
   if (provinceCommandCard) {
-    provinceCommandCard.classList.add("active", "basic-province");
+    showCommandCard("basic-province");
     provinceCommandCard.classList.remove("unit-command");
   }
   selectedRegionType.textContent = "province";
@@ -2141,7 +2156,7 @@ function closeProvinceInfoPanel() {
   appState.debugSelectedProvinceId = null;
   appState.debugSelectedProvinceName = "None";
   appState.deckSelectedFeatureId = null;
-  if (provinceCommandCard) provinceCommandCard.classList.remove("active", "basic-province", "unit-command");
+  hideCommandCard();
   selectedRegionType.textContent = "--";
   selectedRegion.innerHTML = "";
   buildActions.innerHTML = "";
@@ -2297,7 +2312,7 @@ function unitPanelIconText(unit) {
 function renderUnitCommandPanel() {
   const unit = selectedUnitPanelData();
   if (!unit) return;
-  if (provinceCommandCard) provinceCommandCard.classList.add("active", "basic-province", "unit-command");
+  showCommandCard("basic-province", "unit-command");
   selectedRegionType.textContent = "unit";
   const province = unit.province || null;
   const hp = Number.isFinite(Number(unit.health)) ? Number(unit.health) : 100;
@@ -3311,13 +3326,13 @@ function initMapLibreDeckMap() {
       x: event.point.x,
       y: event.point.y,
       radius: 5,
-      layerIds: ["wm-unit-placeholder-markers", "wm-unit-icons", "wm-province-borders", "wm-country-terrain"],
+      layerIds: ["wm-unit-icons", "wm-province-borders", "wm-country-terrain"],
     });
     if (!picked || !picked.object) {
       closeProvinceInfoPanel();
       return;
     }
-    if (picked.layer && (picked.layer.id === "wm-unit-icons" || picked.layer.id === "wm-unit-placeholder-markers")) {
+    if (picked.layer && picked.layer.id === "wm-unit-icons") {
       handleUnitMapClick(picked.object);
       return;
     }
@@ -3973,7 +3988,7 @@ function movementLayerSignature() {
     .join(",");
   const owners = Object.keys(appState.provinceOwnerOverrides || {}).length;
   const preview = appState.movementRoutePreview ? appState.movementRoutePreview.toProvinceId : "";
-  return `${appState.selectedMovementUnitId || ""}:${orders.length}:${preview}:${captures}:${owners}:${appState.movementRenderTick}`;
+  return `${appState.selectedMovementUnitId || ""}:${orders.length}:${preview}:${captures}:${owners}`;
 }
 
 function logRenderedUnits(unitData) {
@@ -3997,20 +4012,10 @@ function logRenderedUnits(unitData) {
 }
 
 function ensureUnitVisualAnimation() {
-  if (appState.unitVisualFrame || !appState.game || appState.screen !== "game" || !appState.deckInstance) return;
-  appState.unitVisualFrame = requestAnimationFrame((timestamp) => {
-    appState.unitVisualFrame = null;
-    if (!appState.game || appState.screen !== "game" || !appState.deckInstance) return;
-    if (appState.unitVisualFrameAt && timestamp - appState.unitVisualFrameAt < 72) {
-      ensureUnitVisualAnimation();
-      return;
-    }
-    appState.unitVisualFrameAt = timestamp;
-    appState.movementRenderTick += 1;
-    appState.deckLayerSignature = "";
-    updateDeckStrategyLayers();
-    ensureUnitVisualAnimation();
-  });
+  if (!appState.game || appState.screen !== "game" || !appState.deckInstance) return;
+  if (Object.keys(appState.movementOrders || {}).length || Object.keys(appState.captureProgress || {}).length) {
+    startMovementAnimation();
+  }
 }
 
 function selectMovementUnit(unit) {
@@ -4033,8 +4038,8 @@ function selectMovementUnit(unit) {
     provinceName: province ? province.name : null,
     stackUnits: appState.selectedUnitStackIds,
   });
-  renderUnitCommandPanel();
-  showToast(`${unit.ownerName || "Unit"} ${unit.name} selected. Choose Move, Attack, or Split.`);
+  hideCommandCard();
+  showToast(`${unit.ownerName || "Unit"} ${unit.name} selected.`);
   appState.deckLayerSignature = "";
   updateDeckStrategyLayers();
 }
@@ -4205,6 +4210,8 @@ function issueMoveOrderToProvince(province) {
   showToast(`${unit.name} moving to ${province.name}${eta ? ` (${eta.label})` : ""}.`);
   renderUnitCommandPanel();
   scheduleGameplaySave();
+  appState.deckLayerSignature = "";
+  updateDeckStrategyLayers();
   startMovementAnimation();
   return true;
 }
@@ -4214,15 +4221,22 @@ function startMovementAnimation() {
   const tick = () => {
     appState.movementFrame = null;
     const now = Date.now();
-    updateGameplayCaptures(now);
+    const hasMovingOrders = Object.keys(appState.movementOrders || {}).length > 0;
+    const captureChanged = updateGameplayCaptures(now);
+    const beforeMovementSignature = movementLayerSignature();
+    if (hasMovingOrders) updateDeckUnitLayers();
+    const afterMovementSignature = movementLayerSignature();
     if (!Object.keys(appState.movementOrders || {}).length && !Object.keys(appState.captureProgress || {}).length) {
-      appState.deckLayerSignature = "";
-      updateDeckStrategyLayers();
+      if (captureChanged || beforeMovementSignature !== afterMovementSignature) {
+        appState.deckLayerSignature = "";
+        updateDeckStrategyLayers();
+      }
       return;
     }
-    appState.movementRenderTick += 1;
-    appState.deckLayerSignature = "";
-    updateDeckStrategyLayers();
+    if (captureChanged || beforeMovementSignature !== afterMovementSignature) {
+      appState.deckLayerSignature = "";
+      updateDeckStrategyLayers();
+    }
     appState.movementFrame = requestAnimationFrame(tick);
   };
   appState.movementFrame = requestAnimationFrame(tick);
@@ -4589,8 +4603,8 @@ const unitVisualIcons = {
     url: "assets/units/infantry-l1.png",
     width: 211,
     height: 512,
-    anchorX: 106,
-    anchorY: 476,
+    anchorX: 105.5,
+    anchorY: 256,
     mask: false,
   },
   armor: {
@@ -4598,7 +4612,7 @@ const unitVisualIcons = {
     width: 128,
     height: 104,
     anchorX: 64,
-    anchorY: 72,
+    anchorY: 52,
     mask: false,
   },
   technical: {
@@ -4606,7 +4620,7 @@ const unitVisualIcons = {
     width: 120,
     height: 96,
     anchorX: 60,
-    anchorY: 72,
+    anchorY: 48,
     mask: false,
   },
 };
@@ -4667,7 +4681,7 @@ function unitVisualIcon(unit) {
 }
 
 function unitUsesPngSprite(unit) {
-  return unitVisualType(unit) === "infantry";
+  return Boolean(unitVisualIcon(unit));
 }
 
 function unitZoomSpriteScale() {
@@ -5887,6 +5901,116 @@ function handleDeckMapHover(event) {
   });
 }
 
+function deckVisibleUnitData(step) {
+  const visibleBounds = mapLibreVisibleBounds(4);
+  return deckUnitData(step)
+    .filter((unit) => unit.coords[0] >= visibleBounds.minLng && unit.coords[0] <= visibleBounds.maxLng && unit.coords[1] >= visibleBounds.minLat && unit.coords[1] <= visibleBounds.maxLat);
+}
+
+function deckUnitDataSignature(unitData) {
+  return unitData
+    .map((unit) => [
+      unit.id,
+      unit.selected ? 1 : 0,
+      unit.moving ? 1 : 0,
+      unit.stackCount || 1,
+      Math.round((unit.coords[0] || 0) * 10000),
+      Math.round((unit.coords[1] || 0) * 10000),
+      Math.round(unit.heading || 0),
+    ].join(":"))
+    .join("|");
+}
+
+function createDeckUnitLayers(unitData) {
+  return [
+    new deck.ScatterplotLayer({
+      id: "wm-unit-selection-rings",
+      data: unitData.filter((unit) => unit.selected),
+      visible: true,
+      getPosition: (unit) => unit.coords,
+      getRadius: (unit) => 39000 + ((unit.idlePulse || 0) * 3200),
+      radiusUnits: "meters",
+      stroked: true,
+      filled: true,
+      getFillColor: [210, 246, 176, 28],
+      getLineColor: [244, 255, 222, 248],
+      getLineWidth: 2.6,
+      lineWidthUnits: "pixels",
+      pickable: false,
+    }),
+    new deck.IconLayer({
+      id: "wm-unit-shadows",
+      data: unitData,
+      visible: true,
+      getPosition: (unit) => unit.coords,
+      getIcon: () => unitShadowIcon,
+      getSize: unitShadowSize,
+      getAngle: (unit) => unit.heading || 0,
+      getPixelOffset: (unit) => [0, 7 + (unit.selected ? 1 : 0)],
+      sizeUnits: "pixels",
+      billboard: true,
+      pickable: false,
+    }),
+    new deck.IconLayer({
+      id: "wm-unit-icons",
+      data: unitData,
+      visible: true,
+      getPosition: (unit) => unit.coords,
+      getIcon: unitVisualIcon,
+      getSize: unitVisualSize,
+      getAngle: (unit) => unit.heading || 0,
+      sizeUnits: "pixels",
+      billboard: true,
+      pickable: true,
+      onClick: (info) => {
+        if (info && info.object) handleUnitMapClick(info.object);
+      },
+    }),
+    new deck.TextLayer({
+      id: "wm-unit-stack-counts",
+      data: unitData.filter((unit) => unit.stackCount > 1),
+      visible: true,
+      getPosition: (unit) => unit.coords,
+      getText: (unit) => String(unit.stackCount),
+      getSize: 11,
+      getColor: [248, 252, 236, 245],
+      sizeUnits: "pixels",
+      fontFamily: "Inter, Rajdhani, sans-serif",
+      fontWeight: 800,
+      getPixelOffset: [13, -15],
+      getTextAnchor: "middle",
+      getAlignmentBaseline: "center",
+      background: true,
+      getBackgroundColor: [8, 13, 12, 214],
+      backgroundPadding: [3, 2],
+      outlineWidth: 1.5,
+      outlineColor: [0, 0, 0, 220],
+      pickable: false,
+    }),
+  ];
+}
+
+function updateDeckUnitLayers() {
+  if (!appState.deckInstance || !appState.mapLibreMap || !appState.debugMapData || !appState.deckCurrentLayers.length) return false;
+  const step = deckZoomStep();
+  const unitData = deckVisibleUnitData(step);
+  const signature = `${step}:${deckUnitDataSignature(unitData)}`;
+  if (appState.deckUnitLayerSignature === signature) {
+    syncDeckViewState();
+    return false;
+  }
+  appState.deckUnitLayerSignature = signature;
+  const unitLayers = createDeckUnitLayers(unitData);
+  const unitLayerById = new Map(unitLayers.map((layer) => [layer.id, layer]));
+  const nextLayers = appState.deckCurrentLayers.map((layer) => unitLayerById.get(layer.id) || layer);
+  appState.deckCurrentLayers = nextLayers;
+  appState.deckInstance.setProps({
+    viewState: mapLibreDeckViewState(),
+    layers: nextLayers,
+  });
+  return true;
+}
+
 function updateDeckStrategyLayers() {
   if (!appState.deckInstance || !appState.mapLibreMap || !appState.debugMapData) return;
 
@@ -5908,7 +6032,6 @@ function updateDeckStrategyLayers() {
     .filter((route) => lineIntersectsBounds(route, visibleBounds));
   const unitData = deckUnitData(step)
     .filter((unit) => unit.coords[0] >= visibleBounds.minLng && unit.coords[0] <= visibleBounds.maxLng && unit.coords[1] >= visibleBounds.minLat && unit.coords[1] <= visibleBounds.maxLat);
-  const unitMarkerData = unitData.filter((unit) => !unitUsesPngSprite(unit));
   logRenderedUnits(unitData);
   ensureUnitVisualAnimation();
   const collisionExtensions = appState.deckCollisionExtension || [];
@@ -6100,41 +6223,6 @@ function updateDeckStrategyLayers() {
       billboard: true,
       pickable: false,
     }),
-    new deck.ScatterplotLayer({
-      id: "wm-unit-placeholder-markers",
-      data: unitMarkerData,
-      visible: true,
-      getPosition: (unit) => unit.coords,
-      getRadius: unitMarkerRadius,
-      radiusUnits: "meters",
-      stroked: true,
-      filled: true,
-      getFillColor: unitMarkerFill,
-      getLineColor: unitMarkerLine,
-      getLineWidth: (unit) => unit.selected ? 2.4 : 1.45,
-      lineWidthUnits: "pixels",
-      pickable: true,
-      autoHighlight: true,
-      highlightColor: [255, 252, 218, 46],
-      onClick: (info) => {
-        if (info && info.object) handleUnitMapClick(info.object);
-      },
-    }),
-    new deck.TextLayer({
-      id: "wm-unit-placeholder-glyphs",
-      data: unitMarkerData,
-      visible: true,
-      getPosition: (unit) => unit.coords,
-      getText: unitMarkerGlyph,
-      getSize: 12,
-      getColor: [7, 13, 10, 235],
-      sizeUnits: "pixels",
-      fontFamily: "Inter, Rajdhani, sans-serif",
-      fontWeight: 900,
-      getTextAnchor: "middle",
-      getAlignmentBaseline: "center",
-      pickable: false,
-    }),
     new deck.IconLayer({
       id: "wm-unit-icons",
       data: unitData,
@@ -6211,6 +6299,8 @@ function updateDeckStrategyLayers() {
     viewState: mapLibreDeckViewState(),
     layers,
   });
+  appState.deckCurrentLayers = layers;
+  appState.deckUnitLayerSignature = `${step}:${deckUnitDataSignature(unitData)}`;
 }
 
 function loadProjectionDebugData() {

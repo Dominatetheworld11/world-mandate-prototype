@@ -129,6 +129,42 @@ label span,
   display: block;
 }
 
+body.game-map-only {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #050809;
+}
+
+body.game-map-only .app-header,
+body.game-map-only #screen-game .strategic-topbar,
+body.game-map-only #screen-game .module-dock,
+body.game-map-only #screen-game .module-drawers,
+body.game-map-only #screen-game .map-head,
+body.game-map-only #screen-game #province-command-card,
+body.game-map-only #toast {
+  display: none !important;
+}
+
+body.game-map-only .app-shell,
+body.game-map-only #screen-game,
+body.game-map-only .game-grid,
+body.game-map-only .map-card,
+body.game-map-only .map-shell,
+body.game-map-only .maplibre-map,
+body.game-map-only .deck-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
 .join-shell,
 .lobby-grid,
 .game-grid {
