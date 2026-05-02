@@ -306,6 +306,16 @@
     };
   }
 
+  function splitStackIds(unitIds, requestedCount) {
+    const ids = Array.isArray(unitIds) ? unitIds.filter(Boolean) : [];
+    if (ids.length <= 1) return { split: [], remaining: ids.slice() };
+    const count = Math.max(1, Math.min(ids.length - 1, Math.floor(Number(requestedCount || 0))));
+    return {
+      split: ids.slice(0, count),
+      remaining: ids.slice(count),
+    };
+  }
+
   function nearestProvinceForUnit(unit, provinces, fallbackCoords) {
     if (!unit || !Array.isArray(provinces) || !provinces.length) return null;
     const explicitId = unit.localProvinceId || unit.provinceId;
@@ -427,6 +437,7 @@
     shortestProvincePath,
     smoothAngleDegrees,
     smoothPoint,
+    splitStackIds,
     positionAlongPath,
   };
 }));

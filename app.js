@@ -7,6 +7,10 @@ const appState = {
   selectedProvince: null,
   selectedNodeId: null,
   selectedMovementUnitId: null,
+  selectedUnitCommandMode: null,
+  selectedUnitStackIds: [],
+  unitStackAssignments: {},
+  nextLocalStackId: 1,
   selectedUnitType: "infantry",
   movementOrders: {},
   movementRoutePreview: null,
@@ -2059,7 +2063,10 @@ function renderSelectedRegion() {
 
 function renderDebugProvinceCommand() {
   const province = appState.selectedProvince;
-  if (provinceCommandCard) provinceCommandCard.classList.add("active", "basic-province");
+  if (provinceCommandCard) {
+    provinceCommandCard.classList.add("active", "basic-province");
+    provinceCommandCard.classList.remove("unit-command");
+  }
   selectedRegionType.textContent = "province";
   if (province) {
     selectedRegion.innerHTML = `
@@ -2128,11 +2135,13 @@ function closeProvinceInfoPanel() {
   appState.selectedRegionId = null;
   appState.selectedNodeId = null;
   appState.selectedMovementUnitId = null;
+  appState.selectedUnitCommandMode = null;
+  appState.selectedUnitStackIds = [];
   appState.movementRoutePreview = null;
   appState.debugSelectedProvinceId = null;
   appState.debugSelectedProvinceName = "None";
   appState.deckSelectedFeatureId = null;
-  if (provinceCommandCard) provinceCommandCard.classList.remove("active", "basic-province");
+  if (provinceCommandCard) provinceCommandCard.classList.remove("active", "basic-province", "unit-command");
   selectedRegionType.textContent = "--";
   selectedRegion.innerHTML = "";
   buildActions.innerHTML = "";
@@ -2253,6 +2262,143 @@ function provinceEtaStatusHtml(province) {
   const eta = selectedProvinceEta(province);
   if (!eta) return "";
   return `<div class="province-status-line">ETA: ${eta.label}</div>`;
+}
+
+function selectedUnitSource() {
+  if (!appState.selectedMovementUnitId || !appState.game) return null;
+  return (appState.game.units || []).find((unit) => unit.id === appState.selectedMovementUnitId) || null;
+}
+
+function selectedUnitPanelData() {
+  const unit = selectedUnitSource();
+  if (!unit) return null;
+  const rendered = deckUnitData(deckZoomStep()).find((entry) => (
+    entry.id === unit.id ||
+    (Array.isArray(entry.stackUnits) && entry.stackUnits.includes(unit.id))
+  ));
+  const province = unitCurrentProvince(unit);
+  return {
+    ...(rendered || unit),
+    sourceUnit: unit,
+    stackUnits: rendered && Array.isArray(rendered.stackUnits) ? rendered.stackUnits : [unit.id],
+    stackCount: rendered && rendered.stackCount ? rendered.stackCount : 1,
+    province,
+    coords: rendered && rendered.coords ? rendered.coords : unitCurrentLngLat(unit),
+  };
+}
+
+function unitPanelIconText(unit) {
+  const type = unitVisualType(unit);
+  if (type === "armor") return "AV";
+  if (type === "infantry") return "INF";
+  return "RCN";
+}
+
+function renderUnitCommandPanel() {
+  const unit = selectedUnitPanelData();
+  if (!unit) return;
+  if (provinceCommandCard) provinceCommandCard.classList.add("active", "basic-province", "unit-command");
+  selectedRegionType.textContent = "unit";
+  const province = unit.province || null;
+  const hp = Number.isFinite(Number(unit.health)) ? Number(unit.health) : 100;
+  const maxHp = unit.type === "tanks" ? 58 : unit.type === "navy" ? 70 : unit.type === "jets" ? 44 : 36;
+  selectedRegion.innerHTML = `
+    <div class="unit-sheet">
+      <div class="unit-panel-icon unit-panel-${unitVisualType(unit)}">${unitPanelIconText(unit)}</div>
+      <div class="province-sheet-title">
+        <h3>${unit.stackCount > 1 ? `${unit.stackCount} Unit Stack` : unit.name}</h3>
+        <span>${unit.ownerName || countryNameForId(unitOwnerId(unit))}</span>
+      </div>
+    </div>
+    <div class="province-stat-grid unit-stat-grid">
+      <article>
+        <span>Type</span>
+        <strong>${unitTypeLabel(unit)}</strong>
+      </article>
+      <article>
+        <span>HP</span>
+        <strong>${hp}/${maxHp}</strong>
+      </article>
+      <article>
+        <span>Province</span>
+        <strong>${province ? province.name : unit.provinceName || "Unknown"}</strong>
+      </article>
+    </div>
+  `;
+  const splitDisabled = unit.stackCount <= 1 ? "disabled" : "";
+  buildActions.innerHTML = `
+    <button class="mini-button province-action" type="button" data-unit-command="move"><strong>Move</strong></button>
+    <button class="mini-button province-action" type="button" data-unit-command="attack"><strong>Attack</strong></button>
+    <button class="mini-button province-action" type="button" data-unit-command="split" ${splitDisabled}><strong>Split</strong></button>
+  `;
+  recruitActions.innerHTML = "";
+  movementActions.innerHTML = appState.selectedUnitCommandMode
+    ? `<p class="module-copy">Command: ${appState.selectedUnitCommandMode.toUpperCase()}</p>`
+    : "";
+  bindUnitCommandButtons(unit);
+}
+
+function bindUnitCommandButtons(unit) {
+  buildActions.querySelectorAll("[data-unit-command]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const command = button.dataset.unitCommand;
+      if (command === "move") {
+        appState.selectedUnitCommandMode = "move";
+        showToast(`${unit.name} ready to move. Hover and click a destination province.`);
+      } else if (command === "attack") {
+        appState.selectedUnitCommandMode = "attack";
+        appState.movementRoutePreview = null;
+        showToast(`${unit.name} attack order armed. Click an enemy unit or province.`);
+      } else if (command === "split") {
+        renderUnitSplitMenu(unit);
+        return;
+      }
+      appState.deckLayerSignature = "";
+      renderUnitCommandPanel();
+      updateDeckStrategyLayers();
+    });
+  });
+}
+
+function renderUnitSplitMenu(unit) {
+  const stackUnits = Array.isArray(unit.stackUnits) ? unit.stackUnits : [unit.id];
+  if (stackUnits.length <= 1) return;
+  const options = [];
+  for (let count = 1; count < stackUnits.length; count += 1) {
+    options.push(`<button class="mini-button province-action" type="button" data-split-count="${count}"><strong>Split ${count}</strong></button>`);
+  }
+  recruitActions.innerHTML = `<div class="unit-split-menu">${options.join("")}</div>`;
+  recruitActions.querySelectorAll("[data-split-count]").forEach((button) => {
+    button.addEventListener("click", () => splitSelectedUnitStack(Number(button.dataset.splitCount)));
+  });
+}
+
+function splitSelectedUnitStack(count) {
+  const unit = selectedUnitPanelData();
+  const api = movementApi();
+  if (!unit || !api || !api.splitStackIds) return;
+  const result = api.splitStackIds(unit.stackUnits || [unit.id], count);
+  if (!result.split.length) {
+    showToast("This stack cannot be split.");
+    return;
+  }
+  const stackId = `local-stack-${appState.nextLocalStackId++}`;
+  const remainingStackId = `base-${unit.provinceId || "province"}`;
+  result.split.forEach((unitId) => {
+    appState.unitStackAssignments[unitId] = stackId;
+  });
+  result.remaining.forEach((unitId) => {
+    appState.unitStackAssignments[unitId] = appState.unitStackAssignments[unitId] || remainingStackId;
+  });
+  appState.selectedMovementUnitId = result.split[0];
+  appState.selectedUnitStackIds = result.split.slice();
+  appState.selectedUnitCommandMode = null;
+  appState.movementRoutePreview = null;
+  scheduleGameplaySave();
+  appState.deckLayerSignature = "";
+  renderUnitCommandPanel();
+  updateDeckStrategyLayers();
+  showToast(`Split ${result.split.length} unit${result.split.length === 1 ? "" : "s"} into a new stack.`);
 }
 
 function renderDiplomacy() {
@@ -3161,11 +3307,11 @@ function initMapLibreDeckMap() {
       x: event.point.x,
       y: event.point.y,
       radius: 5,
-      layerIds: ["wm-unit-icons", "wm-province-borders", "wm-country-terrain"],
+      layerIds: ["wm-unit-placeholder-markers", "wm-unit-icons", "wm-province-borders", "wm-country-terrain"],
     });
     if (!picked || !picked.object) return;
-    if (picked.layer && picked.layer.id === "wm-unit-icons") {
-      selectMovementUnit(picked.object);
+    if (picked.layer && (picked.layer.id === "wm-unit-icons" || picked.layer.id === "wm-unit-placeholder-markers")) {
+      handleUnitMapClick(picked.object);
       return;
     }
     if (picked.layer && picked.layer.id === "wm-province-borders") {
@@ -3448,6 +3594,8 @@ function loadGameplayStateIfNeeded() {
     appState.provinceOwnerOverrides = saved.provinceOwnerOverrides && typeof saved.provinceOwnerOverrides === "object" ? saved.provinceOwnerOverrides : {};
     appState.unitProvinceAssignments = saved.unitProvinceAssignments && typeof saved.unitProvinceAssignments === "object" ? saved.unitProvinceAssignments : {};
     appState.unitLocalPositions = saved.unitLocalPositions && typeof saved.unitLocalPositions === "object" ? saved.unitLocalPositions : {};
+    appState.unitStackAssignments = saved.unitStackAssignments && typeof saved.unitStackAssignments === "object" ? saved.unitStackAssignments : {};
+    appState.nextLocalStackId = Number.isFinite(Number(saved.nextLocalStackId)) ? Number(saved.nextLocalStackId) : 1;
     appState.captureProgress = saved.captureProgress && typeof saved.captureProgress === "object" ? saved.captureProgress : {};
     appState.movementOrders = saved.movementOrders && typeof saved.movementOrders === "object" ? saved.movementOrders : {};
   } catch (error) {
@@ -3463,6 +3611,8 @@ function saveGameplayState() {
       provinceOwnerOverrides: appState.provinceOwnerOverrides || {},
       unitProvinceAssignments: appState.unitProvinceAssignments || {},
       unitLocalPositions: appState.unitLocalPositions || {},
+      unitStackAssignments: appState.unitStackAssignments || {},
+      nextLocalStackId: appState.nextLocalStackId || 1,
       captureProgress: appState.captureProgress || {},
       movementOrders: appState.movementOrders || {},
     }));
@@ -3743,6 +3893,7 @@ function deckUnitData(step) {
         selected: appState.selectedMovementUnitId === unit.id,
         progress: order ? order.progress || 0 : 0,
         idlePulse: unitVisualPulse(unit),
+        stackGroupId: appState.unitStackAssignments[unit.id] || null,
         stackCount: 1,
         stackUnits: [unit.id],
       };
@@ -3758,7 +3909,7 @@ function deckUnitData(step) {
       rendered.push(unit);
       return;
     }
-    const stackKey = `${unit.ownerId}:${unit.provinceId}`;
+    const stackKey = `${unit.ownerId}:${unit.provinceId}:${unit.stackGroupId || "main"}`;
     if (!stackGroups.has(stackKey)) {
       stackGroups.set(stackKey, { ...unit, stackUnits: [unit.id], stackCount: 1 });
       return;
@@ -3857,7 +4008,14 @@ function ensureUnitVisualAnimation() {
 function selectMovementUnit(unit) {
   if (!unit) return;
   appState.selectedMovementUnitId = unit.id;
+  appState.selectedUnitCommandMode = null;
+  appState.selectedUnitStackIds = Array.isArray(unit.stackUnits) ? unit.stackUnits.slice() : [unit.id];
   appState.movementRoutePreview = null;
+  if (appState.selectedProvince) appState.selectedProvince.selected = false;
+  appState.selectedProvince = null;
+  appState.deckSelectedFeatureId = null;
+  appState.debugSelectedProvinceId = null;
+  appState.debugSelectedProvinceName = "None";
   const province = unitCurrentProvince(unit);
   console.info("[movement] unit selected", {
     unitId: unit.id,
@@ -3865,10 +4023,48 @@ function selectMovementUnit(unit) {
     owner: unit.ownerName || unit.owner,
     provinceId: province ? province.id : null,
     provinceName: province ? province.name : null,
+    stackUnits: appState.selectedUnitStackIds,
   });
-  showToast(`${unit.ownerName || "Unit"} ${unit.name} selected. Click a province to move.`);
+  renderUnitCommandPanel();
+  showToast(`${unit.ownerName || "Unit"} ${unit.name} selected. Choose Move, Attack, or Split.`);
   appState.deckLayerSignature = "";
   updateDeckStrategyLayers();
+}
+
+function logAttackTarget(target) {
+  const attacker = selectedUnitPanelData();
+  if (!attacker) return;
+  const targetUnit = target && target.unit;
+  const targetProvince = target && target.province;
+  console.info("[attack] target selected", {
+    attackerUnitId: attacker.id,
+    attackerName: attacker.name,
+    attackerOwner: attacker.ownerName || countryNameForId(unitOwnerId(attacker)),
+    targetUnitId: targetUnit ? targetUnit.id : null,
+    targetUnitName: targetUnit ? targetUnit.name : null,
+    targetProvinceId: targetProvince ? targetProvince.id : targetUnit ? targetUnit.provinceId : null,
+    targetProvinceName: targetProvince ? targetProvince.name : targetUnit ? targetUnit.provinceName : null,
+    targetOwner: targetUnit ? targetUnit.ownerName || countryNameForId(unitOwnerId(targetUnit)) : targetProvince ? targetProvince.ownerName : null,
+  });
+  showToast(`Attack target logged: ${targetUnit ? targetUnit.name : targetProvince ? targetProvince.name : "target"}.`);
+  appState.selectedUnitCommandMode = null;
+  appState.movementRoutePreview = null;
+  appState.deckLayerSignature = "";
+  renderUnitCommandPanel();
+  updateDeckStrategyLayers();
+}
+
+function handleUnitMapClick(unit) {
+  if (!unit) return;
+  if (
+    appState.selectedMovementUnitId &&
+    appState.selectedUnitCommandMode === "attack" &&
+    unit.id !== appState.selectedMovementUnitId
+  ) {
+    logAttackTarget({ unit });
+    return;
+  }
+  selectMovementUnit(unit);
 }
 
 function createProvinceMoveOrder(unit, province, now = Date.now()) {
@@ -3915,7 +4111,7 @@ function clearMovementRoutePreview() {
 }
 
 function updateMovementRoutePreview(province) {
-  if (!appState.selectedMovementUnitId || !appState.game || !province) {
+  if (appState.selectedUnitCommandMode !== "move" || !appState.selectedMovementUnitId || !appState.game || !province) {
     clearMovementRoutePreview();
     return;
   }
@@ -3958,6 +4154,9 @@ function issueMoveOrderToProvince(province) {
       provinceName: province.name,
     });
     showToast(`${unit.name} is already in ${province.name}.`);
+    appState.selectedUnitCommandMode = null;
+    appState.movementRoutePreview = null;
+    renderUnitCommandPanel();
     return true;
   }
   if (move.blocked) {
@@ -3971,6 +4170,9 @@ function issueMoveOrderToProvince(province) {
       reason: "No connected province path or route exceeds maxProvinceSteps",
     });
     showToast(`No valid province route to ${province.name}.`);
+    appState.selectedUnitCommandMode = null;
+    appState.movementRoutePreview = null;
+    renderUnitCommandPanel();
     return true;
   }
   const { order, fromProvince, coords, eta } = move;
@@ -3979,6 +4181,7 @@ function issueMoveOrderToProvince(province) {
   appState.unitLocalPositions[unit.id] = coords;
   appState.movementRoutePreview = null;
   appState.selectedMovementUnitId = unit.id;
+  appState.selectedUnitCommandMode = null;
   console.info("[movement] order issued", {
     unitId: unit.id,
     unitName: unit.name,
@@ -3992,6 +4195,7 @@ function issueMoveOrderToProvince(province) {
     eta,
   });
   showToast(`${unit.name} moving to ${province.name}${eta ? ` (${eta.label})` : ""}.`);
+  renderUnitCommandPanel();
   scheduleGameplaySave();
   startMovementAnimation();
   return true;
@@ -5551,23 +5755,21 @@ function setDeckFeatureSelection(info) {
   if (!feature) return;
   const province = provinceFromFeature(feature, info.index || 0);
   if (!province) return;
-  if (appState.selectedMovementUnitId && issueMoveOrderToProvince(province)) {
-    if (appState.selectedProvince) appState.selectedProvince.selected = false;
-    if (appState.provinceEngine) {
-      appState.provinceEngine.provinces.forEach((entry) => { entry.selected = false; });
-    }
-    province.selected = true;
-    appState.selectedProvince = province;
-    appState.deckSelectedFeatureId = province.id;
-    appState.debugSelectedProvinceId = province.id;
-    appState.debugSelectedProvinceName = province.name;
+  if (appState.selectedMovementUnitId && appState.selectedUnitCommandMode === "move" && issueMoveOrderToProvince(province)) {
     appState.deckLayerSignature = "";
-    renderDebugProvinceCommand();
     updateDeckStrategyLayers();
+    return;
+  }
+  if (appState.selectedMovementUnitId && appState.selectedUnitCommandMode === "attack") {
+    logAttackTarget({ province });
     return;
   }
   const id = province ? province.id : debugFeatureId(feature, info.index || 0);
   const name = province ? province.name : debugFeatureName(feature);
+  appState.selectedMovementUnitId = null;
+  appState.selectedUnitCommandMode = null;
+  appState.selectedUnitStackIds = [];
+  appState.movementRoutePreview = null;
   if (appState.selectedProvince) appState.selectedProvince.selected = false;
   if (appState.provinceEngine) {
     appState.provinceEngine.provinces.forEach((entry) => { entry.selected = false; });
@@ -5893,7 +6095,7 @@ function updateDeckStrategyLayers() {
       autoHighlight: true,
       highlightColor: [255, 252, 218, 46],
       onClick: (info) => {
-        if (info && info.object) selectMovementUnit(info.object);
+        if (info && info.object) handleUnitMapClick(info.object);
       },
     }),
     new deck.TextLayer({
@@ -5923,7 +6125,7 @@ function updateDeckStrategyLayers() {
       billboard: true,
       pickable: true,
       onClick: (info) => {
-        if (info && info.object) selectMovementUnit(info.object);
+        if (info && info.object) handleUnitMapClick(info.object);
       },
     }),
     new deck.TextLayer({

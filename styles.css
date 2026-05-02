@@ -894,6 +894,80 @@ button:disabled {
   background: rgba(118, 189, 151, 0.16);
 }
 
+.action-card.unit-command .detail-stack {
+  gap: 8px;
+}
+
+.action-card.unit-command #movement-actions {
+  display: block;
+  margin-top: 8px;
+}
+
+.action-card.unit-command #recruit-actions {
+  display: block;
+}
+
+.unit-sheet {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 11px;
+}
+
+.unit-panel-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(244, 250, 230, 0.32);
+  border-radius: 9px;
+  background:
+    linear-gradient(145deg, rgba(221, 236, 190, 0.2), rgba(48, 73, 62, 0.22)),
+    rgba(10, 18, 16, 0.8);
+  color: rgba(249, 252, 238, 0.94);
+  font-family: "Barlow Condensed", Rajdhani, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32), inset 0 0 18px rgba(255, 255, 255, 0.045);
+}
+
+.unit-panel-armor {
+  border-color: rgba(222, 198, 134, 0.42);
+}
+
+.unit-panel-infantry {
+  border-color: rgba(171, 222, 145, 0.42);
+}
+
+.unit-panel-technical {
+  border-color: rgba(138, 201, 214, 0.42);
+}
+
+.unit-stat-grid {
+  margin-top: 8px;
+}
+
+.unit-split-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.action-card.unit-command .module-copy {
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(170, 218, 154, 0.18);
+  border-radius: 7px;
+  background: rgba(96, 142, 89, 0.12);
+  color: rgba(230, 246, 220, 0.86);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .action-card .section-label {
   margin: 10px 0 5px;
   font-size: 10px;

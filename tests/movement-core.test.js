@@ -130,5 +130,15 @@ assert.strictEqual(
   0,
   "angle smoothing should rotate backward across the shortest wraparound path"
 );
+assert.deepStrictEqual(
+  movement.splitStackIds(["a", "b", "c"], 2),
+  { split: ["a", "b"], remaining: ["c"] },
+  "stack splitting should move the requested number into a new stack"
+);
+assert.deepStrictEqual(
+  movement.splitStackIds(["a"], 1),
+  { split: [], remaining: ["a"] },
+  "single-unit stacks should not split"
+);
 
 console.log("movement-core ok");
