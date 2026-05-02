@@ -110,4 +110,25 @@ assert.strictEqual(eta.steps, 2, "ETA should count province-to-province steps");
 assert.strictEqual(eta.etaMs, routedOrder.durationMs);
 assert.ok(/2 steps/.test(eta.label), "ETA label should include route step count");
 
+assert.deepStrictEqual(
+  movement.smoothPoint([0, 0], [10, 4], 0.25),
+  [2.5, 1],
+  "visual point smoothing should interpolate between current and target"
+);
+assert.deepStrictEqual(
+  movement.smoothPoint([0, 0], [10, 4], 4),
+  [10, 4],
+  "visual point smoothing should clamp amount to the target"
+);
+assert.strictEqual(
+  movement.smoothAngleDegrees(350, 10, 0.5),
+  0,
+  "angle smoothing should rotate across the shortest wraparound path"
+);
+assert.strictEqual(
+  movement.smoothAngleDegrees(10, 350, 0.5),
+  0,
+  "angle smoothing should rotate backward across the shortest wraparound path"
+);
+
 console.log("movement-core ok");

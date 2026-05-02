@@ -8,6 +8,30 @@
     return Math.max(0, Math.min(1, value));
   }
 
+  function normalizeDegrees(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 0;
+    return ((number % 360) + 360) % 360;
+  }
+
+  function smoothPoint(current, target, amount) {
+    if (!Array.isArray(current) || !Array.isArray(target)) return Array.isArray(target) ? target.slice() : null;
+    const alpha = clamp01(Number(amount));
+    return [
+      Number(current[0]) + ((Number(target[0]) - Number(current[0])) * alpha),
+      Number(current[1]) + ((Number(target[1]) - Number(current[1])) * alpha),
+    ];
+  }
+
+  function smoothAngleDegrees(current, target, amount) {
+    const alpha = clamp01(Number(amount));
+    const from = normalizeDegrees(current);
+    const to = normalizeDegrees(target);
+    const delta = ((((to - from) % 360) + 540) % 360) - 180;
+    const next = normalizeDegrees(from + (delta * alpha));
+    return Math.abs(next - 360) < 0.000001 ? 0 : Number(next.toFixed(4));
+  }
+
   function distanceLngLat(a, b) {
     if (!Array.isArray(a) || !Array.isArray(b)) return 0;
     const dx = Number(b[0]) - Number(a[0]);
@@ -401,6 +425,8 @@
     movementEtaForOrder,
     nearestProvinceForUnit,
     shortestProvincePath,
+    smoothAngleDegrees,
+    smoothPoint,
     positionAlongPath,
   };
 }));

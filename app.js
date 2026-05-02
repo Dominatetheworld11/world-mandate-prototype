@@ -12,6 +12,9 @@ const appState = {
   movementRoutePreview: null,
   unitLocalPositions: {},
   unitProvinceAssignments: {},
+  unitVisualStates: {},
+  unitVisualFrame: null,
+  unitVisualFrameAt: 0,
   captureProgress: {},
   provinceOwnerOverrides: {},
   gameplaySaveLoaded: false,
@@ -3667,10 +3670,56 @@ function unitCurrentLngLat(unit) {
   return regionCenterLngLat(unit.regionId);
 }
 
+function unitVisualPulse(unit, now = Date.now()) {
+  const offset = (stableHash(unit && unit.id) % 900) / 900;
+  const wave = Math.sin(((now / 1000) + offset) * Math.PI * 2);
+  return unit && unit.moving ? 0 : wave;
+}
+
+function smoothUnitVisualState(unit, targetCoords, targetHeading, moving) {
+  const api = movementApi();
+  const now = Date.now();
+  const previous = appState.unitVisualStates[unit.id];
+  if (!previous || !Array.isArray(previous.coords)) {
+    const initial = {
+      coords: targetCoords.slice(),
+      heading: targetHeading || 0,
+      moving,
+      updatedAt: now,
+    };
+    appState.unitVisualStates[unit.id] = initial;
+    return initial;
+  }
+
+  const elapsedMs = Math.max(16, Math.min(120, now - (previous.updatedAt || now)));
+  const positionAmount = moving
+    ? Math.min(0.62, 0.18 + (elapsedMs / 180))
+    : Math.min(0.34, 0.1 + (elapsedMs / 420));
+  const headingAmount = Math.min(0.42, 0.12 + (elapsedMs / 260));
+  const coords = api && api.smoothPoint
+    ? api.smoothPoint(previous.coords, targetCoords, positionAmount)
+    : [
+      previous.coords[0] + ((targetCoords[0] - previous.coords[0]) * positionAmount),
+      previous.coords[1] + ((targetCoords[1] - previous.coords[1]) * positionAmount),
+    ];
+  const heading = api && api.smoothAngleDegrees
+    ? api.smoothAngleDegrees(previous.heading || 0, targetHeading || 0, headingAmount)
+    : targetHeading || previous.heading || 0;
+  const next = {
+    coords,
+    heading,
+    moving,
+    updatedAt: now,
+  };
+  appState.unitVisualStates[unit.id] = next;
+  return next;
+}
+
 function deckUnitData(step) {
   if (!appState.game) return [];
   const rendered = [];
   const stackGroups = new Map();
+  const liveUnitIds = new Set();
   const rawUnits = (appState.game.units || [])
     .map((unit) => {
       const coords = unitCurrentLngLat(unit);
@@ -3678,23 +3727,31 @@ function deckUnitData(step) {
       const order = appState.movementOrders && appState.movementOrders[unit.id];
       const province = unitCurrentProvince(unit);
       const ownerId = unitOwnerId(unit);
+      const targetHeading = unitVisualHeading(unit, coords, order);
+      const visualState = smoothUnitVisualState(unit, coords, targetHeading, Boolean(order));
+      liveUnitIds.add(unit.id);
       return {
         ...unit,
         ownerId,
         ownerName: unit.ownerName || countryNameForId(ownerId),
-        coords,
+        coords: visualState.coords,
         trueCoords: coords,
         provinceId: province ? province.id : unit.provinceId,
         provinceName: province ? province.name : null,
-        heading: unitVisualHeading(unit, coords, order),
+        heading: visualState.heading,
         moving: Boolean(order),
         selected: appState.selectedMovementUnitId === unit.id,
         progress: order ? order.progress || 0 : 0,
+        idlePulse: unitVisualPulse(unit),
         stackCount: 1,
         stackUnits: [unit.id],
       };
     })
     .filter(Boolean);
+
+  Object.keys(appState.unitVisualStates || {}).forEach((unitId) => {
+    if (!liveUnitIds.has(unitId)) delete appState.unitVisualStates[unitId];
+  });
 
   rawUnits.forEach((unit) => {
     if (unit.moving || !unit.provinceId) {
@@ -3777,6 +3834,23 @@ function logRenderedUnits(unitData) {
       stackCount: unit.stackCount || 1,
       moving: Boolean(unit.moving),
     })),
+  });
+}
+
+function ensureUnitVisualAnimation() {
+  if (appState.unitVisualFrame || !appState.game || appState.screen !== "game" || !appState.deckInstance) return;
+  appState.unitVisualFrame = requestAnimationFrame((timestamp) => {
+    appState.unitVisualFrame = null;
+    if (!appState.game || appState.screen !== "game" || !appState.deckInstance) return;
+    if (appState.unitVisualFrameAt && timestamp - appState.unitVisualFrameAt < 72) {
+      ensureUnitVisualAnimation();
+      return;
+    }
+    appState.unitVisualFrameAt = timestamp;
+    appState.movementRenderTick += 1;
+    appState.deckLayerSignature = "";
+    updateDeckStrategyLayers();
+    ensureUnitVisualAnimation();
   });
 }
 
@@ -4383,22 +4457,25 @@ function unitVisualIcon(unit) {
 function unitVisualSize(unit) {
   const type = unitVisualType(unit);
   const base = type === "armor" ? 38 : type === "infantry" ? 34 : 36;
-  return base + (unit && unit.selected ? 4 : 0);
+  const pulse = unit && !unit.moving ? (unit.idlePulse || 0) * 1.2 : 0;
+  return base + pulse + (unit && unit.selected ? 5 : 0);
 }
 
 function unitMarkerRadius(unit) {
   const type = unitVisualType(unit);
   const base = type === "armor" ? 22000 : type === "infantry" ? 19000 : 20500;
-  return base + (unit && unit.selected ? 6000 : 0);
+  const pulse = unit && !unit.moving ? (unit.idlePulse || 0) * 1800 : 0;
+  return base + pulse + (unit && unit.selected ? 7200 : 0);
 }
 
 function unitMarkerFill(unit) {
   const ownerId = unitOwnerId(unit);
-  if (appState.game && ownerId === appState.game.viewerCountryId) return [119, 202, 126, 224];
+  const selectedBoost = unit && unit.selected ? 22 : 0;
+  if (appState.game && ownerId === appState.game.viewerCountryId) return [Math.min(141 + selectedBoost, 255), 218, 136, unit && unit.selected ? 242 : 224];
   const type = unitVisualType(unit);
-  if (type === "armor") return [204, 183, 112, 218];
-  if (type === "infantry") return [174, 206, 154, 214];
-  return [126, 186, 196, 214];
+  if (type === "armor") return [Math.min(204 + selectedBoost, 255), 183, 112, unit && unit.selected ? 236 : 218];
+  if (type === "infantry") return [Math.min(174 + selectedBoost, 255), 206, 154, unit && unit.selected ? 232 : 214];
+  return [Math.min(126 + selectedBoost, 255), 186, 196, unit && unit.selected ? 232 : 214];
 }
 
 function unitMarkerLine(unit) {
@@ -4413,7 +4490,7 @@ function unitMarkerGlyph(unit) {
 }
 
 function unitShadowSize(unit) {
-  return unitVisualSize(unit) * 1.05;
+  return unitVisualSize(unit) * (unit && unit.selected ? 1.22 : 1.08);
 }
 
 function bearingDegrees(from, to) {
@@ -5609,6 +5686,7 @@ function updateDeckStrategyLayers() {
   const unitData = deckUnitData(step)
     .filter((unit) => unit.coords[0] >= visibleBounds.minLng && unit.coords[0] <= visibleBounds.maxLng && unit.coords[1] >= visibleBounds.minLat && unit.coords[1] <= visibleBounds.maxLat);
   logRenderedUnits(unitData);
+  ensureUnitVisualAnimation();
   const collisionExtensions = appState.deckCollisionExtension || [];
   const bounds = mapLibreVisibleBounds(0);
   const signature = `${step}:${appState.deckSelectedFeatureId || ""}:${provinceFeatures.length}:${macroLabelData.length}:${unitData.length}:${movementPreviewRoutes.length}:${movementRoutes.length}:${movementLayerSignature()}:${Math.round(bounds.minLng)}:${Math.round(bounds.maxLng)}:${Math.round(bounds.minLat)}:${Math.round(bounds.maxLat)}`;
@@ -5775,12 +5853,13 @@ function updateDeckStrategyLayers() {
       data: unitData.filter((unit) => unit.selected),
       visible: true,
       getPosition: (unit) => unit.coords,
-      getRadius: 34000,
+      getRadius: (unit) => 39000 + ((unit.idlePulse || 0) * 3200),
       radiusUnits: "meters",
       stroked: true,
-      filled: false,
-      getLineColor: [244, 255, 222, 238],
-      getLineWidth: 2.25,
+      filled: true,
+      getFillColor: [210, 246, 176, 28],
+      getLineColor: [244, 255, 222, 248],
+      getLineWidth: 2.6,
       lineWidthUnits: "pixels",
       pickable: false,
     }),
@@ -5792,7 +5871,7 @@ function updateDeckStrategyLayers() {
       getIcon: () => unitShadowIcon,
       getSize: unitShadowSize,
       getAngle: (unit) => unit.heading || 0,
-      getPixelOffset: [0, 7],
+      getPixelOffset: (unit) => [0, 7 + (unit.selected ? 1 : 0)],
       sizeUnits: "pixels",
       billboard: true,
       pickable: false,
