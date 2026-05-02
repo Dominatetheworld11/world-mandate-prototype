@@ -5775,17 +5775,14 @@ function setDeckFeatureSelection(info) {
   if (!feature) return;
   const province = provinceFromFeature(feature, info.index || 0);
   if (!province) return;
-  if (
-    appState.selectedMovementUnitId &&
-    appState.selectedUnitCommandMode !== "attack" &&
-    issueMoveOrderToProvince(province)
-  ) {
-    appState.deckLayerSignature = "";
-    updateDeckStrategyLayers();
-    return;
-  }
   if (appState.selectedMovementUnitId && appState.selectedUnitCommandMode === "attack") {
     logAttackTarget({ province });
+    return;
+  }
+  if (appState.selectedMovementUnitId) {
+    issueMoveOrderToProvince(province);
+    appState.deckLayerSignature = "";
+    updateDeckStrategyLayers();
     return;
   }
   const id = province ? province.id : debugFeatureId(feature, info.index || 0);
