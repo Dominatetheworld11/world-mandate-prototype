@@ -922,11 +922,9 @@ button:disabled {
   background:
     radial-gradient(ellipse at 50% 46%, transparent 0 48%, rgba(0, 0, 0, 0.28) 100%),
     radial-gradient(ellipse at 20% 38%, rgba(116, 173, 173, 0.035), transparent 20%),
-    radial-gradient(ellipse at 62% 45%, rgba(157, 198, 198, 0.025), transparent 16%),
-    repeating-linear-gradient(18deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 10px),
-    repeating-linear-gradient(106deg, rgba(0, 0, 0, 0.055) 0 1px, transparent 1px 17px);
+    radial-gradient(ellipse at 62% 45%, rgba(157, 198, 198, 0.018), transparent 16%);
   mix-blend-mode: overlay;
-  opacity: 0.34;
+  opacity: 0.24;
 }
 
 .map-shell::after {
@@ -1072,16 +1070,15 @@ body.maplibre-active .leaflet-map {
 
 .strategy-country-border {
   filter:
-    drop-shadow(0 0 5px rgba(255, 255, 255, 0.16))
-    drop-shadow(0 2px 1px rgba(0, 0, 0, 0.62));
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.1))
+    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.66));
   pointer-events: none;
 }
 
 .strategy-province-border {
   mix-blend-mode: screen;
   filter:
-    drop-shadow(0 0 2px rgba(255, 255, 255, 0.08))
-    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.62));
+    drop-shadow(0 1px 0 rgba(0, 0, 0, 0.64));
   transition: fill-opacity 120ms ease, stroke-width 120ms ease, stroke 120ms ease;
   cursor: pointer;
 }
@@ -1309,9 +1306,9 @@ body.maplibre-active .leaflet-map {
 .maplibre-map {
   z-index: 1;
   background:
-    radial-gradient(ellipse at 25% 70%, rgba(13, 37, 54, 0.34), transparent 34%),
-    radial-gradient(ellipse at 66% 45%, rgba(2, 12, 22, 0.42), transparent 42%),
-    linear-gradient(135deg, #041725 0%, #03101b 54%, #01060c 100%);
+    radial-gradient(ellipse at 25% 70%, rgba(8, 27, 43, 0.42), transparent 34%),
+    radial-gradient(ellipse at 66% 45%, rgba(1, 8, 17, 0.52), transparent 42%),
+    linear-gradient(135deg, #03131f 0%, #020c16 54%, #01050a 100%);
 }
 
 .maplibre-map::after {
@@ -1321,11 +1318,11 @@ body.maplibre-active .leaflet-map {
   z-index: 2;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(0, 4, 8, 0.26), rgba(0, 7, 12, 0.38)),
-    radial-gradient(ellipse at 50% 46%, transparent 0 54%, rgba(0, 0, 0, 0.52) 100%),
-    radial-gradient(circle at 18% 64%, rgba(18, 38, 42, 0.045), transparent 18%);
+    linear-gradient(180deg, rgba(1, 9, 15, 0.22), rgba(0, 9, 16, 0.34)),
+    radial-gradient(ellipse at 50% 46%, transparent 0 56%, rgba(0, 0, 0, 0.48) 100%),
+    radial-gradient(circle at 18% 64%, rgba(9, 26, 34, 0.04), transparent 18%);
   mix-blend-mode: multiply;
-  opacity: 0.78;
+  opacity: 0.72;
 }
 
 .deck-overlay {
@@ -1381,10 +1378,11 @@ body.maplibre-active .leaflet-map {
 
 .maplibre-map .maplibregl-canvas {
   filter:
-    brightness(0.86)
-    saturate(0.62)
-    contrast(0.98)
-    hue-rotate(-9deg);
+    brightness(0.78)
+    saturate(0.5)
+    contrast(0.92)
+    hue-rotate(-7deg)
+    blur(0.18px);
 }
 
 .maplibre-map .maplibregl-control-container {

@@ -3043,7 +3043,7 @@ function initMapLibreDeckMap() {
         id: "wm-ocean",
         type: "background",
         paint: {
-          "background-color": "#061925",
+          "background-color": "#03121e",
         },
       },
       {
@@ -3051,11 +3051,11 @@ function initMapLibreDeckMap() {
         type: "raster",
         source: "relief",
         paint: {
-          "raster-opacity": 0.84,
-          "raster-contrast": -0.03,
-          "raster-saturation": -0.42,
+          "raster-opacity": 0.80,
+          "raster-contrast": -0.11,
+          "raster-saturation": -0.58,
           "raster-brightness-min": 0.0,
-          "raster-brightness-max": 0.78,
+          "raster-brightness-max": 0.70,
         },
       },
       {
@@ -3063,10 +3063,10 @@ function initMapLibreDeckMap() {
         type: "hillshade",
         source: "terrain",
         paint: {
-          "hillshade-shadow-color": "rgba(0, 0, 0, 0.34)",
-          "hillshade-highlight-color": "rgba(218, 214, 180, 0.13)",
-          "hillshade-accent-color": "rgba(45, 61, 55, 0.10)",
-          "hillshade-exaggeration": 0.16,
+          "hillshade-shadow-color": "rgba(0, 0, 0, 0.30)",
+          "hillshade-highlight-color": "rgba(213, 210, 176, 0.09)",
+          "hillshade-accent-color": "rgba(36, 51, 48, 0.08)",
+          "hillshade-exaggeration": 0.12,
         },
       },
     ],
@@ -3248,24 +3248,24 @@ function deckFeatureId(feature, index) {
 function deckCountryColor(feature) {
   const selected = appState.deckSelectedFeatureId && appState.deckSelectedFeatureId === deckFeatureId(feature, 0);
   const { lng, lat } = featureCenter(feature);
-  let color = [62, 87, 58, 132];
-  if (lat >= 62 || (lat >= 55 && lng > 40)) color = [111, 126, 116, 126];
-  else if ((lat >= 17 && lat <= 33 && lng >= -18 && lng <= 58) || (lng > 120 && lat < -12)) color = [149, 115, 62, 136];
-  else if (lat >= 50 && lng >= -12 && lng <= 35) color = [45, 82, 49, 132];
-  else if (lat >= 36 && lat <= 50 && lng >= 38 && lng <= 118) color = [97, 95, 58, 128];
-  else if (lat < 5 && lng > -80 && lng < -35) color = [23, 83, 48, 134];
-  return selected ? [Math.min(color[0] + 30, 255), Math.min(color[1] + 30, 255), Math.min(color[2] + 20, 255), 162] : color;
+  let color = [48, 68, 48, 118];
+  if (lat >= 62 || (lat >= 55 && lng > 40)) color = [83, 94, 89, 112];
+  else if ((lat >= 17 && lat <= 33 && lng >= -18 && lng <= 58) || (lng > 120 && lat < -12)) color = [117, 92, 58, 120];
+  else if (lat >= 50 && lng >= -12 && lng <= 35) color = [36, 66, 42, 118];
+  else if (lat >= 36 && lat <= 50 && lng >= 38 && lng <= 118) color = [76, 78, 55, 114];
+  else if (lat < 5 && lng > -80 && lng < -35) color = [22, 67, 42, 120];
+  return selected ? [Math.min(color[0] + 24, 255), Math.min(color[1] + 24, 255), Math.min(color[2] + 16, 255), 148] : color;
 }
 
 function deckRelationColor(feature, alpha = 74) {
   const countryId = countryIdFromFeature(feature);
   const country = countryId && appState.game && appState.game.countries.find((entry) => entry.id === countryId);
-  if (!country) return [232, 236, 228, alpha];
-  if (country.relation === "self") return [143, 211, 139, alpha];
-  if (country.relation === "allied") return [132, 176, 210, alpha];
-  if (country.relation === "war") return [219, 101, 91, alpha];
-  if (country.relation === "trade" || country.relation === "peace") return [112, 190, 184, alpha];
-  return [232, 236, 228, alpha];
+  if (!country) return [244, 247, 238, alpha];
+  if (country.relation === "self") return [185, 228, 177, alpha];
+  if (country.relation === "allied") return [175, 207, 230, alpha];
+  if (country.relation === "war") return [232, 128, 118, alpha];
+  if (country.relation === "trade" || country.relation === "peace") return [161, 215, 207, alpha];
+  return [244, 247, 238, alpha];
 }
 
 function deckCountryLabelDatum(feature, index) {
@@ -3820,14 +3820,14 @@ function provinceLineColor(feature, index, step) {
   const hovered = province && appState.deckHoveredFeatureId === province.id;
   if (selected) return [255, 253, 226, 240];
   if (hovered) return [248, 250, 232, 192];
-  return [238, 241, 233, step === "world" ? 42 : step === "countries" ? 68 : step === "capitals" ? 96 : 128];
+  return [226, 230, 221, step === "world" ? 36 : step === "countries" ? 62 : step === "capitals" ? 92 : 122];
 }
 
 function provinceLineWidth(feature, index, step) {
   const province = provinceFromFeature(feature, index);
   if (province && appState.deckSelectedFeatureId === province.id) return step === "tactical" ? 1.72 : 1.42;
   if (province && appState.deckHoveredFeatureId === province.id) return step === "tactical" ? 1.26 : 1.04;
-  return step === "world" ? 0.36 : step === "countries" ? 0.54 : step === "capitals" ? 0.76 : 0.98;
+  return step === "world" ? 0.32 : step === "countries" ? 0.5 : step === "capitals" ? 0.72 : 0.94;
 }
 
 function provinceFillColor(feature, index, step = "tactical") {
@@ -5244,11 +5244,11 @@ function updateDeckStrategyLayers() {
       filled: false,
       getLineColor: (feature) => {
         const selected = appState.deckSelectedFeatureId && appState.deckSelectedFeatureId === deckFeatureId(feature, 0);
-        return selected ? [255, 250, 222, 236] : deckRelationColor(feature, step === "world" ? 230 : 208);
+        return selected ? [255, 250, 222, 238] : deckRelationColor(feature, step === "world" ? 238 : 224);
       },
       getLineWidth: (feature) => {
         const selected = appState.deckSelectedFeatureId && appState.deckSelectedFeatureId === deckFeatureId(feature, 0);
-        return selected ? 2.35 : step === "world" ? 1.92 : 1.62;
+        return selected ? 2.42 : step === "world" ? 2.06 : 1.76;
       },
       lineWidthUnits: "pixels",
       pickable: false,
@@ -5259,15 +5259,15 @@ function updateDeckStrategyLayers() {
       getPosition: (item) => item.position,
       getText: (item) => item.label,
       getSize: (item) => item.size * (item.tier === 1 ? 1.1 : item.tier === 2 ? 1.08 : 0.9) * (step === "countries" ? 1.12 : 1.02),
-      getColor: (item) => [247, 249, 242, item.tier === 1 ? 244 : item.tier === 2 ? 228 : 174],
+      getColor: (item) => [248, 250, 243, item.tier === 1 ? 246 : item.tier === 2 ? 232 : 182],
       getAngle: 0,
       sizeUnits: "pixels",
       fontFamily: "Barlow Condensed, Rajdhani, Oswald, sans-serif",
       fontWeight: 800,
       getTextAnchor: "middle",
       getAlignmentBaseline: "center",
-      outlineWidth: (item) => item.tier === 1 ? 4 : item.tier === 2 ? 3 : 2,
-      outlineColor: [0, 3, 5, step === "countries" ? 238 : 218],
+      outlineWidth: (item) => item.tier === 1 ? 3.5 : item.tier === 2 ? 2.7 : 1.9,
+      outlineColor: [0, 3, 5, step === "countries" ? 232 : 210],
       background: false,
       collisionEnabled: true,
       getCollisionPriority: (item) => item.priority,
