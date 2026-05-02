@@ -825,6 +825,20 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.province-status-line {
+  width: max-content;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px solid rgba(170, 218, 154, 0.24);
+  border-radius: 6px;
+  background: rgba(96, 142, 89, 0.16);
+  color: rgba(230, 246, 220, 0.92);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .province-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

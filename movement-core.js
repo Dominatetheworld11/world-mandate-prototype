@@ -218,6 +218,70 @@
     return province && (province.ownerId || province.owner || province.country || province.countryId || province.ownerName);
   }
 
+  function normalizeOwnerKey(owner) {
+    if (!owner) return "";
+    if (typeof owner === "object") {
+      return normalizeOwnerKey(owner.ownerId || owner.owner || owner.country || owner.countryId || owner.ownerName || owner.name);
+    }
+    return String(owner).trim().toLowerCase();
+  }
+
+  function captureRateFor(unitOwner, provinceOwner, options) {
+    const unitKey = normalizeOwnerKey(unitOwner);
+    const provinceKey = normalizeOwnerKey(provinceOwner);
+    const neutralRate = options && Number.isFinite(options.neutralRate)
+      ? Math.max(0, Number(options.neutralRate))
+      : 8;
+    const enemyRate = options && Number.isFinite(options.enemyRate)
+      ? Math.max(0, Number(options.enemyRate))
+      : 3;
+
+    if (!unitKey) return 0;
+    if (!provinceKey || provinceKey === "neutral" || provinceKey === "unclaimed") return neutralRate;
+    if (unitKey === provinceKey) return 0;
+    return enemyRate;
+  }
+
+  function advanceCaptureProgress(capture, elapsedMs, ratePercentPerSecond) {
+    const current = capture && Number.isFinite(Number(capture.progress)) ? Number(capture.progress) : 0;
+    const elapsedSeconds = Math.max(0, Number(elapsedMs || 0) / 1000);
+    const rate = Math.max(0, Number(ratePercentPerSecond || 0));
+    const progress = Math.min(100, current + (elapsedSeconds * rate));
+    const rounded = Number(progress.toFixed(2));
+    return {
+      ...(capture || {}),
+      progress: rounded,
+      complete: rounded >= 100,
+    };
+  }
+
+  function formatEtaLabel(etaMs) {
+    const seconds = Math.max(1, Math.round(Number(etaMs || 0) / 1000));
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    if (!remainder) return `${minutes}m`;
+    return `${minutes}m ${remainder}s`;
+  }
+
+  function movementEtaForOrder(order, options) {
+    const pathSteps = order && Array.isArray(order.provincePath)
+      ? Math.max(0, order.provincePath.length - 1)
+      : 0;
+    const segmentSteps = order && Array.isArray(order.segments) ? order.segments.length : 0;
+    const steps = Math.max(pathSteps, segmentSteps);
+    const fallbackStepMs = options && Number.isFinite(options.stepMs) ? Math.max(1, Number(options.stepMs)) : 2200;
+    const etaMs = order && Number.isFinite(Number(order.durationMs))
+      ? Math.max(0, Number(order.durationMs))
+      : steps * fallbackStepMs;
+    const stepLabel = `${steps} ${steps === 1 ? "step" : "steps"}`;
+    return {
+      steps,
+      etaMs,
+      label: `${stepLabel} / ${formatEtaLabel(etaMs)}`,
+    };
+  }
+
   function nearestProvinceForUnit(unit, provinces, fallbackCoords) {
     if (!unit || !Array.isArray(provinces) || !provinces.length) return null;
     const explicitId = unit.localProvinceId || unit.provinceId;
@@ -329,9 +393,12 @@
 
   return {
     advanceMoveOrder,
+    advanceCaptureProgress,
+    captureRateFor,
     createMoveOrder,
     curvedRoute,
     distanceLngLat,
+    movementEtaForOrder,
     nearestProvinceForUnit,
     shortestProvincePath,
     positionAlongPath,

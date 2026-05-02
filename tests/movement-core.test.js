@@ -90,4 +90,24 @@ const blockedLongRoute = movement.createMoveOrder(
 );
 assert.strictEqual(blockedLongRoute, null, "long moves beyond maxProvinceSteps should be blocked");
 
+const friendlyRate = movement.captureRateFor("germany", "germany");
+const neutralRate = movement.captureRateFor("germany", null);
+const enemyRate = movement.captureRateFor("germany", "france");
+assert.strictEqual(friendlyRate, 0, "friendly provinces should not be captured");
+assert.ok(neutralRate > enemyRate, "neutral provinces should capture faster than enemy provinces");
+assert.ok(enemyRate > 0, "enemy provinces should be capturable");
+
+const captureProgress = movement.advanceCaptureProgress({ progress: 25 }, 5000, 5);
+assert.strictEqual(captureProgress.progress, 50, "capture should advance by elapsed time and rate");
+assert.strictEqual(captureProgress.complete, false);
+
+const captureComplete = movement.advanceCaptureProgress({ progress: 95 }, 2000, 5);
+assert.strictEqual(captureComplete.progress, 100, "capture should clamp at 100");
+assert.strictEqual(captureComplete.complete, true);
+
+const eta = movement.movementEtaForOrder(routedOrder);
+assert.strictEqual(eta.steps, 2, "ETA should count province-to-province steps");
+assert.strictEqual(eta.etaMs, routedOrder.durationMs);
+assert.ok(/2 steps/.test(eta.label), "ETA label should include route step count");
+
 console.log("movement-core ok");
