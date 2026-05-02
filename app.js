@@ -4578,11 +4578,11 @@ const cityMarkerIcons = {
 
 const unitVisualIcons = {
   infantry: {
-    url: svgIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112"><defs><linearGradient id="g" x1="24" y1="22" x2="82" y2="86" gradientUnits="userSpaceOnUse"><stop stop-color="#8d9b78"/><stop offset=".52" stop-color="#495c43"/><stop offset="1" stop-color="#1f2d28"/></linearGradient><linearGradient id="m" x1="38" y1="18" x2="70" y2="42"><stop stop-color="#9ca887"/><stop offset="1" stop-color="#465740"/></linearGradient></defs><path d="M52 18c-10 0-17 7-17 17v6h34v-6c0-10-7-17-17-17z" fill="#25332d"/><path d="M37 34c7-8 25-8 31 0l-1-10H38z" fill="url(#m)"/><circle cx="52" cy="34" r="8" fill="#18231f"/><path d="M34 45l21-8 24 13-10 32-31-2z" fill="url(#g)"/><path d="M42 49l14-5 13 8-6 17-18-2z" fill="#aeb68e" opacity=".28"/><path d="M39 78l-15 17h11l16-16zM68 79l17 16H74L58 79z" fill="#202c27"/><path d="M35 58L14 70l5 8 25-13zM74 54l23 9-4 9-25-10z" fill="#26362f"/><path d="M17 70l52-14 2 6-52 15z" fill="#101817"/><path d="M28 91h56" stroke="#dfe1c8" stroke-width="3" stroke-linecap="round" opacity=".42"/><path d="M35 45l20-8 24 13" fill="none" stroke="#d8dbc0" stroke-width="2.2" opacity=".28"/></svg>'),
-    width: 112,
-    height: 112,
-    anchorX: 56,
-    anchorY: 72,
+    url: "assets/units/infantry-l1.png",
+    width: 211,
+    height: 512,
+    anchorX: 106,
+    anchorY: 476,
     mask: false,
   },
   armor: {
@@ -4658,11 +4658,23 @@ function unitVisualIcon(unit) {
   return unitVisualIcons[unitVisualType(unit)] || unitVisualIcons.technical;
 }
 
+function unitUsesPngSprite(unit) {
+  return unitVisualType(unit) === "infantry";
+}
+
+function unitZoomSpriteScale() {
+  const step = deckZoomStep();
+  if (step === "tactical") return 1.14;
+  if (step === "capitals") return 1.04;
+  if (step === "countries") return 0.96;
+  return 0.9;
+}
+
 function unitVisualSize(unit) {
   const type = unitVisualType(unit);
-  const base = type === "armor" ? 38 : type === "infantry" ? 34 : 36;
+  const base = type === "armor" ? 38 : type === "infantry" ? 54 : 36;
   const pulse = unit && !unit.moving ? (unit.idlePulse || 0) * 1.2 : 0;
-  return base + pulse + (unit && unit.selected ? 5 : 0);
+  return (base + pulse + (unit && unit.selected ? 5 : 0)) * unitZoomSpriteScale();
 }
 
 function unitMarkerRadius(unit) {
@@ -5887,6 +5899,7 @@ function updateDeckStrategyLayers() {
     .filter((route) => lineIntersectsBounds(route, visibleBounds));
   const unitData = deckUnitData(step)
     .filter((unit) => unit.coords[0] >= visibleBounds.minLng && unit.coords[0] <= visibleBounds.maxLng && unit.coords[1] >= visibleBounds.minLat && unit.coords[1] <= visibleBounds.maxLat);
+  const unitMarkerData = unitData.filter((unit) => !unitUsesPngSprite(unit));
   logRenderedUnits(unitData);
   ensureUnitVisualAnimation();
   const collisionExtensions = appState.deckCollisionExtension || [];
@@ -6080,7 +6093,7 @@ function updateDeckStrategyLayers() {
     }),
     new deck.ScatterplotLayer({
       id: "wm-unit-placeholder-markers",
-      data: unitData,
+      data: unitMarkerData,
       visible: true,
       getPosition: (unit) => unit.coords,
       getRadius: unitMarkerRadius,
@@ -6100,7 +6113,7 @@ function updateDeckStrategyLayers() {
     }),
     new deck.TextLayer({
       id: "wm-unit-placeholder-glyphs",
-      data: unitData,
+      data: unitMarkerData,
       visible: true,
       getPosition: (unit) => unit.coords,
       getText: unitMarkerGlyph,
