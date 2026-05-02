@@ -3760,6 +3760,26 @@ function movementLayerSignature() {
   return `${appState.selectedMovementUnitId || ""}:${orders.length}:${preview}:${captures}:${owners}:${appState.movementRenderTick}`;
 }
 
+function logRenderedUnits(unitData) {
+  const now = Date.now();
+  if (appState.lastUnitRenderLogAt && now - appState.lastUnitRenderLogAt < 2200) return;
+  appState.lastUnitRenderLogAt = now;
+  console.info("[units] render", {
+    count: unitData.length,
+    units: unitData.map((unit) => ({
+      id: unit.id,
+      name: unit.name,
+      type: unitTypeLabel(unit),
+      owner: unit.ownerName || unit.ownerId,
+      provinceId: unit.provinceId,
+      provinceName: unit.provinceName,
+      coords: unit.coords,
+      stackCount: unit.stackCount || 1,
+      moving: Boolean(unit.moving),
+    })),
+  });
+}
+
 function selectMovementUnit(unit) {
   if (!unit) return;
   appState.selectedMovementUnitId = unit.id;
@@ -4364,6 +4384,32 @@ function unitVisualSize(unit) {
   const type = unitVisualType(unit);
   const base = type === "armor" ? 38 : type === "infantry" ? 34 : 36;
   return base + (unit && unit.selected ? 4 : 0);
+}
+
+function unitMarkerRadius(unit) {
+  const type = unitVisualType(unit);
+  const base = type === "armor" ? 22000 : type === "infantry" ? 19000 : 20500;
+  return base + (unit && unit.selected ? 6000 : 0);
+}
+
+function unitMarkerFill(unit) {
+  const ownerId = unitOwnerId(unit);
+  if (appState.game && ownerId === appState.game.viewerCountryId) return [119, 202, 126, 224];
+  const type = unitVisualType(unit);
+  if (type === "armor") return [204, 183, 112, 218];
+  if (type === "infantry") return [174, 206, 154, 214];
+  return [126, 186, 196, 214];
+}
+
+function unitMarkerLine(unit) {
+  return unit && unit.selected ? [255, 252, 218, 250] : [9, 15, 12, 235];
+}
+
+function unitMarkerGlyph(unit) {
+  const type = unitVisualType(unit);
+  if (type === "armor") return "■";
+  if (type === "infantry") return "▲";
+  return "◆";
 }
 
 function unitShadowSize(unit) {
@@ -5562,6 +5608,7 @@ function updateDeckStrategyLayers() {
     .filter((route) => lineIntersectsBounds(route, visibleBounds));
   const unitData = deckUnitData(step)
     .filter((unit) => unit.coords[0] >= visibleBounds.minLng && unit.coords[0] <= visibleBounds.maxLng && unit.coords[1] >= visibleBounds.minLat && unit.coords[1] <= visibleBounds.maxLat);
+  logRenderedUnits(unitData);
   const collisionExtensions = appState.deckCollisionExtension || [];
   const bounds = mapLibreVisibleBounds(0);
   const signature = `${step}:${appState.deckSelectedFeatureId || ""}:${provinceFeatures.length}:${macroLabelData.length}:${unitData.length}:${movementPreviewRoutes.length}:${movementRoutes.length}:${movementLayerSignature()}:${Math.round(bounds.minLng)}:${Math.round(bounds.maxLng)}:${Math.round(bounds.minLat)}:${Math.round(bounds.maxLat)}`;
@@ -5748,6 +5795,41 @@ function updateDeckStrategyLayers() {
       getPixelOffset: [0, 7],
       sizeUnits: "pixels",
       billboard: true,
+      pickable: false,
+    }),
+    new deck.ScatterplotLayer({
+      id: "wm-unit-placeholder-markers",
+      data: unitData,
+      visible: true,
+      getPosition: (unit) => unit.coords,
+      getRadius: unitMarkerRadius,
+      radiusUnits: "meters",
+      stroked: true,
+      filled: true,
+      getFillColor: unitMarkerFill,
+      getLineColor: unitMarkerLine,
+      getLineWidth: (unit) => unit.selected ? 2.4 : 1.45,
+      lineWidthUnits: "pixels",
+      pickable: true,
+      autoHighlight: true,
+      highlightColor: [255, 252, 218, 46],
+      onClick: (info) => {
+        if (info && info.object) selectMovementUnit(info.object);
+      },
+    }),
+    new deck.TextLayer({
+      id: "wm-unit-placeholder-glyphs",
+      data: unitData,
+      visible: true,
+      getPosition: (unit) => unit.coords,
+      getText: unitMarkerGlyph,
+      getSize: 12,
+      getColor: [7, 13, 10, 235],
+      sizeUnits: "pixels",
+      fontFamily: "Inter, Rajdhani, sans-serif",
+      fontWeight: 900,
+      getTextAnchor: "middle",
+      getAlignmentBaseline: "center",
       pickable: false,
     }),
     new deck.IconLayer({
