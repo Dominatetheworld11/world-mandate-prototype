@@ -3417,13 +3417,30 @@ function deckUnitData(step) {
 
 function deckMovementRouteData() {
   if (!appState.movementOrders || !movementApi()) return [];
-  return Object.values(appState.movementOrders)
+  const routes = [];
+  Object.values(appState.movementOrders)
     .map((order) => movementApi().advanceMoveOrder(order, Date.now()))
     .filter(Boolean)
-    .map((order) => ({
-      ...order,
-      tier: "movement",
-    }));
+    .forEach((order) => {
+      if (Array.isArray(order.segments) && order.segments.length) {
+        order.segments.forEach((segment, index) => {
+          routes.push({
+            ...order,
+            id: `${order.id}-segment-${index}`,
+            path: segment.path,
+            segment,
+            segmentIndex: index,
+            tier: "movement",
+          });
+        });
+        return;
+      }
+      routes.push({
+        ...order,
+        tier: "movement",
+      });
+    });
+  return routes;
 }
 
 function movementLayerSignature() {
@@ -3477,9 +3494,24 @@ function issueMoveOrderToProvince(province) {
       provinces: movementProvinceList(),
       samples: 22,
       samplesPerSegment: 8,
+      pauseMs: 260,
+      maxProvinceSteps: 7,
+      requireProvincePath: true,
     }
   );
-  if (!order) return false;
+  if (!order) {
+    console.info("[movement] route blocked", {
+      unitId: unit.id,
+      unitName: unit.name,
+      fromProvinceId: fromProvince ? fromProvince.id : null,
+      fromProvinceName: fromProvince ? fromProvince.name : null,
+      toProvinceId: province.id,
+      toProvinceName: province.name,
+      reason: "No connected province path or route exceeds maxProvinceSteps",
+    });
+    showToast(`No valid province route to ${province.name}.`);
+    return true;
+  }
   appState.movementOrders[unit.id] = order;
   appState.unitLocalPositions[unit.id] = coords;
   appState.selectedMovementUnitId = unit.id;

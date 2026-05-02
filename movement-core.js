@@ -127,6 +127,58 @@
     return path;
   }
 
+  function flattenSegmentPaths(segments) {
+    const path = [];
+    for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex += 1) {
+      const segment = segments[segmentIndex];
+      for (let pointIndex = 0; pointIndex < segment.path.length; pointIndex += 1) {
+        if (segmentIndex > 0 && pointIndex === 0) continue;
+        path.push(segment.path[pointIndex]);
+      }
+    }
+    return path;
+  }
+
+  function movementSegmentsForProvincePath(provincePath, options, speed) {
+    if (!Array.isArray(provincePath) || provincePath.length < 2) return [];
+    const samples = options && options.samplesPerSegment;
+    const fixedDuration = options && Number.isFinite(options.segmentDurationMs)
+      ? Math.max(120, Number(options.segmentDurationMs))
+      : null;
+    const pauseMs = options && Number.isFinite(options.pauseMs)
+      ? Math.max(0, Number(options.pauseMs))
+      : 260;
+    const segments = [];
+    let cursorMs = 0;
+
+    for (let index = 1; index < provincePath.length; index += 1) {
+      const from = provincePath[index - 1];
+      const to = provincePath[index];
+      const path = curvedRoute(from.center, to.center, samples || 8);
+      const distance = pathDistance(path);
+      const durationMs = fixedDuration || Math.max(900, Math.min(4200, (distance * 520) / speed));
+      const segmentPauseMs = index < provincePath.length - 1 ? pauseMs : 0;
+      const startMs = cursorMs;
+      const endMs = startMs + durationMs;
+      const pauseEndMs = endMs + segmentPauseMs;
+
+      segments.push({
+        fromProvinceId: from.id,
+        toProvinceId: to.id,
+        path,
+        distance,
+        startMs,
+        endMs,
+        pauseMs: segmentPauseMs,
+        pauseEndMs,
+        durationMs,
+      });
+      cursorMs = pauseEndMs;
+    }
+
+    return segments;
+  }
+
   function positionAlongPath(path, progress) {
     if (!Array.isArray(path) || path.length === 0) return null;
     if (path.length === 1) return path[0].slice();
@@ -201,16 +253,25 @@
     const provincePath = options && Array.isArray(options.provinces)
       ? shortestProvincePath(options.provinces, fromProvinceId, targetProvince.id)
       : [];
-    const routedPath = provincePath.length >= 2
-      ? segmentedProvinceRoute(provincePath, options && options.samplesPerSegment)
-      : [];
-    const path = routedPath.length >= 2
-      ? routedPath
+    const requireProvincePath = Boolean(options && options.requireProvincePath);
+    const maxProvinceSteps = options && Number.isFinite(options.maxProvinceSteps)
+      ? Math.max(1, Number(options.maxProvinceSteps))
+      : null;
+    if (requireProvincePath && provincePath.length < 2) return null;
+    if (maxProvinceSteps && provincePath.length >= 2 && provincePath.length - 1 > maxProvinceSteps) return null;
+
+    const segments = movementSegmentsForProvincePath(provincePath, options, speed);
+    const path = segments.length
+      ? flattenSegmentPaths(segments)
       : curvedRoute(start, end, options && options.samples);
-    const distance = pathDistance(path) || distanceLngLat(start, end);
+    const distance = segments.length
+      ? segments.reduce((total, segment) => total + segment.distance, 0)
+      : pathDistance(path) || distanceLngLat(start, end);
     const durationMs = options && options.durationMs
       ? options.durationMs
-      : Math.max(2200, Math.min(10500, (distance * 520) / speed));
+      : segments.length
+        ? segments[segments.length - 1].pauseEndMs
+        : Math.max(2200, Math.min(10500, (distance * 520) / speed));
 
     return {
       id: `${unit.id}-${targetProvince.id}-${Math.round(now || Date.now())}`,
@@ -221,6 +282,7 @@
       durationMs,
       path,
       provincePath: provincePath.map((province) => province.id),
+      segments,
       progress: 0,
     };
   }
@@ -229,6 +291,34 @@
     if (!order || !Array.isArray(order.path)) return null;
     const elapsed = Math.max(0, (now || Date.now()) - order.startedAt);
     const progress = clamp01(elapsed / Math.max(order.durationMs || 1, 1));
+    if (Array.isArray(order.segments) && order.segments.length) {
+      for (let index = 0; index < order.segments.length; index += 1) {
+        const segment = order.segments[index];
+        if (elapsed <= segment.endMs) {
+          const localProgress = clamp01((elapsed - segment.startMs) / Math.max(segment.durationMs || 1, 1));
+          return {
+            ...order,
+            progress,
+            currentSegmentIndex: index,
+            currentProvinceId: localProgress >= 1 ? segment.toProvinceId : segment.fromProvinceId,
+            paused: false,
+            position: positionAlongPath(segment.path, localProgress),
+            done: false,
+          };
+        }
+        if (elapsed <= segment.pauseEndMs) {
+          return {
+            ...order,
+            progress,
+            currentSegmentIndex: index,
+            currentProvinceId: segment.toProvinceId,
+            paused: true,
+            position: segment.path[segment.path.length - 1].slice(),
+            done: false,
+          };
+        }
+      }
+    }
     return {
       ...order,
       progress,

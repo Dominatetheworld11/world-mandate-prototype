@@ -55,7 +55,7 @@ const routedOrder = movement.createMoveOrder(
   { id: "unit-route", coords: routedProvinces[0].center, provinceId: "berlin", speed: 0.2 },
   routedProvinces[2],
   2000,
-  { provinces: routedProvinces, samplesPerSegment: 6 }
+  { provinces: routedProvinces, samplesPerSegment: 6, segmentDurationMs: 1000, pauseMs: 500 }
 );
 
 assert.deepStrictEqual(
@@ -67,5 +67,27 @@ assert.ok(
   routedOrder.path.some((point) => point[0] === routedProvinces[1].center[0] && point[1] === routedProvinces[1].center[1]),
   "route line should pass through the intermediate province center"
 );
+assert.strictEqual(routedOrder.segments.length, 2, "route should be split into province-to-province segments");
+assert.deepStrictEqual(
+  routedOrder.segments.map((segment) => [segment.fromProvinceId, segment.toProvinceId]),
+  [["berlin", "saxony"], ["saxony", "munich"]]
+);
+
+const pausedAtSaxony = movement.advanceMoveOrder(routedOrder, 3250);
+assert.strictEqual(pausedAtSaxony.paused, true, "unit should pause briefly between province segments");
+assert.strictEqual(pausedAtSaxony.currentProvinceId, "saxony");
+assert.deepStrictEqual(pausedAtSaxony.position, routedProvinces[1].center);
+
+const movingOnSecondSegment = movement.advanceMoveOrder(routedOrder, 3750);
+assert.strictEqual(movingOnSecondSegment.paused, false);
+assert.strictEqual(movingOnSecondSegment.currentSegmentIndex, 1);
+
+const blockedLongRoute = movement.createMoveOrder(
+  { id: "unit-blocked", coords: routedProvinces[0].center, provinceId: "berlin", speed: 0.2 },
+  routedProvinces[2],
+  2000,
+  { provinces: routedProvinces, maxProvinceSteps: 1, requireProvincePath: true }
+);
+assert.strictEqual(blockedLongRoute, null, "long moves beyond maxProvinceSteps should be blocked");
 
 console.log("movement-core ok");
