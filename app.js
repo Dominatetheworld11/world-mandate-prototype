@@ -2302,6 +2302,10 @@ function renderUnitCommandPanel() {
   const province = unit.province || null;
   const hp = Number.isFinite(Number(unit.health)) ? Number(unit.health) : 100;
   const maxHp = unit.type === "tanks" ? 58 : unit.type === "navy" ? 70 : unit.type === "jets" ? 44 : 36;
+  if (appState.selectedProvince) appState.selectedProvince.selected = false;
+  appState.selectedProvince = null;
+  appState.debugSelectedProvinceId = null;
+  appState.debugSelectedProvinceName = "None";
   selectedRegion.innerHTML = `
     <div class="unit-sheet">
       <div class="unit-panel-icon unit-panel-${unitVisualType(unit)}">${unitPanelIconText(unit)}</div>
@@ -3309,7 +3313,10 @@ function initMapLibreDeckMap() {
       radius: 5,
       layerIds: ["wm-unit-placeholder-markers", "wm-unit-icons", "wm-province-borders", "wm-country-terrain"],
     });
-    if (!picked || !picked.object) return;
+    if (!picked || !picked.object) {
+      closeProvinceInfoPanel();
+      return;
+    }
     if (picked.layer && (picked.layer.id === "wm-unit-icons" || picked.layer.id === "wm-unit-placeholder-markers")) {
       handleUnitMapClick(picked.object);
       return;
@@ -3318,6 +3325,7 @@ function initMapLibreDeckMap() {
       setDeckFeatureSelection(picked);
       return;
     }
+    closeProvinceInfoPanel();
     appState.deckSelectedFeatureId = deckFeatureId(picked.object, picked.index || 0);
     appState.deckLayerSignature = "";
     updateDeckStrategyLayers();
@@ -5767,7 +5775,11 @@ function setDeckFeatureSelection(info) {
   if (!feature) return;
   const province = provinceFromFeature(feature, info.index || 0);
   if (!province) return;
-  if (appState.selectedMovementUnitId && appState.selectedUnitCommandMode === "move" && issueMoveOrderToProvince(province)) {
+  if (
+    appState.selectedMovementUnitId &&
+    appState.selectedUnitCommandMode !== "attack" &&
+    issueMoveOrderToProvince(province)
+  ) {
     appState.deckLayerSignature = "";
     updateDeckStrategyLayers();
     return;
