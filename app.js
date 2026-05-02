@@ -4079,6 +4079,7 @@ function simplifyPolygonCoordinates(polygon, interval) {
 
 function simplifyFeatureGeometry(feature, interval) {
   if (!feature || !feature.geometry || interval <= 1) return feature;
+  if (feature.properties && feature.properties.macroProvince) return feature;
   const geometry = feature.geometry;
   let coordinates = geometry.coordinates;
 
@@ -4367,6 +4368,19 @@ function pointNearCountryBoundary(point, countryRings, threshold = 0.05) {
   return false;
 }
 
+function pointInsideOrOnCountry(point, countryRings, countryFeature) {
+  return pointInFeature(point, countryFeature) || pointNearCountryBoundary(point, countryRings, 0.08);
+}
+
+function ringStaysInsideCountry(ring, countryRings, countryFeature, maxSegment = 0.34) {
+  const dense = densifyGeoRing(ring, maxSegment);
+  if (dense.length < 4) return false;
+  for (let index = 0; index < dense.length - 1; index += 1) {
+    if (!pointInsideOrOnCountry(dense[index], countryRings, countryFeature)) return false;
+  }
+  return true;
+}
+
 function organicProvincePoint(point, amplitude) {
   const [lng, lat] = point;
   const waveA = Math.sin((lng * 1.73) + (lat * 0.91));
@@ -4380,16 +4394,21 @@ function organicProvincePoint(point, amplitude) {
 function organicizeMacroProvinceRing(ring, countryRings, countryFeature) {
   const dense = densifyGeoRing(ring, 0.62);
   if (dense.length < 4) return dense;
+  if (!ringStaysInsideCountry(dense, countryRings, countryFeature)) return [];
   const bounds = featureBounds(countryFeature);
   const span = bounds ? Math.max(bounds.maxLng - bounds.minLng, bounds.maxLat - bounds.minLat) : 8;
   const amplitude = Math.max(0.025, Math.min(0.22, span * 0.006));
   const warped = dense.map((point, index) => {
     if (index === dense.length - 1) return null;
     if (pointNearCountryBoundary(point, countryRings)) return point;
-    return organicProvincePoint(point, amplitude);
+    const organic = organicProvincePoint(point, amplitude);
+    return pointInsideOrOnCountry(organic, countryRings, countryFeature) ? organic : point;
   });
   warped[warped.length - 1] = warped[0];
-  return closeGeoRing(warped);
+  const organicRing = closeGeoRing(warped);
+  return ringStaysInsideCountry(organicRing, countryRings, countryFeature)
+    ? organicRing
+    : dense;
 }
 
 function clippedVoronoiValue(point, site, other, scale) {
